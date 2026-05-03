@@ -2,7 +2,6 @@ from .base import *  # noqa
 
 DEBUG = True
 
-INSTALLED_APPS += ['django.contrib.staticfiles']  # noqa
 
 LOGGING = {
     'version': 1,
