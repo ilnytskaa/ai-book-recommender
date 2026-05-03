@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Loader2, BookOpen, Star, Calendar, User, Info, Heart } from 'lucide-react';
+import { Search, Loader2, BookOpen, Star, Calendar, User, Info, Heart, Database, Brain } from 'lucide-react';
 import SearchAnimation from './SearchAnimation';
 import { addToSearchHistory } from './SearchHistory';
 import { addToWishlist } from './Wishlist';
@@ -21,6 +21,7 @@ interface BookRecommendation {
 interface ApiResponse {
   recommendations: BookRecommendation[];
   query: string;
+  used_rag: boolean;
   note?: string;
 }
 
@@ -28,10 +29,14 @@ interface SearchFormProps {
   initialQuery?: string;
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
 export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
   const [query, setQuery] = useState('');
+  const [useRag, setUseRag] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<BookRecommendation[]>([]);
+  const [usedRag, setUsedRag] = useState<boolean | null>(null);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
   const { t } = useLanguage();
@@ -51,32 +56,26 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
     setError('');
     setRecommendations([]);
     setNote('');
+    setUsedRag(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/recommendations/`
-        : '/api/recommendations';
-
-      const response = await fetch(apiUrl, {
+      const response = await fetch(`${BACKEND_URL}/api/recommendations/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, use_rag: useRag }),
       });
 
       if (!response.ok) {
-        throw new Error('Помилка при отриманні рекомендацій');
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData?.error || 'Помилка при отриманні рекомендацій');
       }
 
       const data: ApiResponse = await response.json();
       setRecommendations(data.recommendations);
-      if (data.note) {
-        setNote(data.note);
-      }
+      setUsedRag(data.used_rag);
+      if (data.note) setNote(data.note);
 
       addToSearchHistory(query, data.recommendations.length);
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Щось пішло не так');
     } finally {
@@ -91,7 +90,7 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
         id: Date.now().toString(),
         title: book.title,
         author: book.author,
-        rating: book.rating
+        rating: book.rating,
       });
       alert(`"${book.title}" додано до списку бажань та улюблених!`);
     } else {
@@ -101,6 +100,41 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
 
   return (
     <div className="w-full">
+      {/* RAG toggle */}
+      <div className="flex items-center justify-between mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center space-x-3">
+          {useRag ? (
+            <Database className="w-5 h-5 text-blue-500" />
+          ) : (
+            <Brain className="w-5 h-5 text-purple-500" />
+          )}
+          <div>
+            <p className="font-semibold text-gray-900 dark:text-white text-sm">
+              {useRag ? 'RAG — пошук по базі даних' : 'GPT — без бази даних'}
+            </p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
+              {useRag
+                ? 'Семантичний пошук у власній БД + GPT для пояснень'
+                : 'GPT відповідає лише зі своїх знань (до жовтня 2023)'}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setUseRag(!useRag)}
+          className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
+            useRag ? 'bg-blue-500' : 'bg-purple-500'
+          }`}
+        >
+          <span
+            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+              useRag ? 'translate-x-7' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Search input */}
       <form onSubmit={handleSubmit} className="mb-8">
         <div className="relative text-blue-500">
           <div className="left-0 absolute inset-y-0 flex items-center pl-4 pointer-events-none">
@@ -131,6 +165,21 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
         </div>
       </form>
 
+      {/* Mode badge after search */}
+      {usedRag !== null && (
+        <div className={`flex items-center space-x-2 mb-4 px-4 py-2 rounded-full w-fit text-sm font-medium ${
+          usedRag
+            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
+            : 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200'
+        }`}>
+          {usedRag ? (
+            <><Database className="w-4 h-4" /><span>Результати з бази даних (RAG)</span></>
+          ) : (
+            <><Brain className="w-4 h-4" /><span>Результати від GPT (без RAG)</span></>
+          )}
+        </div>
+      )}
+
       {note && (
         <div className="bg-blue-50 dark:bg-blue-900/50 mb-6 p-4 border border-blue-200 dark:border-blue-800 rounded-lg">
           <div className="flex items-start space-x-2">
@@ -157,7 +206,7 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
             {recommendations.map((book, index) => (
               <div
                 key={index}
-                className="bg-white shadow-lg hover:shadow-xl p-6 border border-gray-100 rounded-2xl transition-shadow"
+                className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl p-6 border border-gray-100 dark:border-gray-700 rounded-2xl transition-shadow"
               >
                 <div className="flex md:flex-row flex-col md:items-start md:space-x-6 space-y-4 md:space-y-0">
                   <div className="flex-shrink-0">
@@ -169,10 +218,10 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
                   <div className="flex-1">
                     <div className="flex sm:flex-row flex-col sm:justify-between sm:items-start mb-3">
                       <div>
-                        <h4 className="mb-1 font-bold text-gray-900 text-xl">
+                        <h4 className="mb-1 font-bold text-gray-900 dark:text-white text-xl">
                           {book.title}
                         </h4>
-                        <div className="flex items-center mb-2 text-gray-600">
+                        <div className="flex items-center mb-2 text-gray-600 dark:text-gray-400">
                           <User className="mr-1 w-4 h-4" />
                           <span>{book.author}</span>
                           {book.year && (
@@ -185,16 +234,16 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
                       </div>
                       <div className="flex items-center space-x-2">
                         {book.rating && (
-                          <div className="flex items-center bg-yellow-50 px-3 py-1 rounded-full">
+                          <div className="flex items-center bg-yellow-50 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
                             <Star className="mr-1 w-4 h-4 text-yellow-500" />
-                            <span className="font-medium text-yellow-700 text-sm">
-                              {book.rating}/5
+                            <span className="font-medium text-yellow-700 dark:text-yellow-400 text-sm">
+                              {book.rating > 5 ? (book.rating / 2).toFixed(1) : book.rating}/5
                             </span>
                           </div>
                         )}
                         <button
                           onClick={() => handleAddToWishlist(book)}
-                          className="flex items-center space-x-1 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-full text-red-600 transition-colors"
+                          className="flex items-center space-x-1 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 px-3 py-1 rounded-full text-red-600 dark:text-red-400 transition-colors"
                           title="Додати до списку бажань"
                         >
                           <Heart className="w-4 h-4" />
@@ -204,17 +253,17 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
                     </div>
 
                     <div className="mb-3">
-                      <span className="inline-block bg-blue-100 px-3 py-1 rounded-full text-blue-800 text-sm">
+                      <span className="inline-block bg-blue-100 dark:bg-blue-900/50 px-3 py-1 rounded-full text-blue-800 dark:text-blue-200 text-sm">
                         {book.genre}
                       </span>
                     </div>
 
-                    <p className="mb-4 text-gray-700 leading-relaxed">
+                    <p className="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">
                       {book.description}
                     </p>
 
-                    <div className="bg-blue-50 p-4 border-blue-400 border-l-4 rounded-r-lg">
-                      <p className="text-blue-800">
+                    <div className="bg-blue-50 dark:bg-blue-900/30 p-4 border-blue-400 border-l-4 rounded-r-lg">
+                      <p className="text-blue-800 dark:text-blue-200">
                         <strong>Чому ця книга для вас:</strong> {book.reason}
                       </p>
                     </div>
@@ -227,42 +276,29 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
       )}
 
       {!isLoading && recommendations.length === 0 && !error && (
-        <div className="bg-gray-50 mt-12 p-8 rounded-2xl">
-          <h4 className="mb-4 font-semibold text-gray-900 text-lg">
+        <div className="bg-gray-50 dark:bg-gray-800 mt-12 p-8 rounded-2xl">
+          <h4 className="mb-4 font-semibold text-gray-900 dark:text-white text-lg">
             Приклади запитів:
           </h4>
           <div className="gap-4 grid md:grid-cols-2">
-            <button
-              onClick={() => setQuery('Хочу щось романтичне про подорожі в Європі')}
-              className="bg-white hover:bg-blue-50 p-4 border border-gray-200 rounded-lg text-left transition-colors"
-            >
-              <p className="font-medium text-blue-600">Романтика + Подорожі</p>
-              <p className="text-gray-600 text-sm">Хочу щось романтичне про подорожі в Європі</p>
-            </button>
-            <button
-              onClick={() => setQuery('Детектив з неочікуваним фіналом, щось сучасне')}
-              className="bg-white hover:bg-blue-50 p-4 border border-gray-200 rounded-lg text-left transition-colors"
-            >
-              <p className="font-medium text-blue-600">Сучасний детектив</p>
-              <p className="text-gray-600 text-sm">Детектив з неочікуваним фіналом, щось сучасне</p>
-            </button>
-            <button
-              onClick={() => setQuery('Наукова фантастика про штучний інтелект')}
-              className="bg-white hover:bg-blue-50 p-4 border border-gray-200 rounded-lg text-left transition-colors"
-            >
-              <p className="font-medium text-blue-600">Sci-Fi про ШІ</p>
-              <p className="text-gray-600 text-sm">Наукова фантастика про штучний інтелект</p>
-            </button>
-            <button
-              onClick={() => setQuery('Мотивуюча книга про особистий розвиток')}
-              className="bg-white hover:bg-blue-50 p-4 border border-gray-200 rounded-lg text-left transition-colors"
-            >
-              <p className="font-medium text-blue-600">Саморозвиток</p>
-              <p className="text-gray-600 text-sm">Мотивуюча книга про особистий розвиток</p>
-            </button>
+            {[
+              { label: 'Романтика + Подорожі', text: 'Хочу щось романтичне про подорожі в Європі' },
+              { label: 'Сучасний детектив', text: 'Детектив з неочікуваним фіналом, щось сучасне' },
+              { label: 'Sci-Fi про ШІ', text: 'Наукова фантастика про штучний інтелект' },
+              { label: 'Книги 2024 року', text: 'Найкращі книги 2024 року' },
+            ].map(({ label, text }) => (
+              <button
+                key={label}
+                onClick={() => setQuery(text)}
+                className="bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-gray-600 p-4 border border-gray-200 dark:border-gray-600 rounded-lg text-left transition-colors"
+              >
+                <p className="font-medium text-blue-600 dark:text-blue-400">{label}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{text}</p>
+              </button>
+            ))}
           </div>
         </div>
       )}
     </div>
   );
-} 
+}
