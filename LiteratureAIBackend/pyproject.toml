@@ -1,0 +1,23 @@
+[project]
+name = "literatureaibackend"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Iryna Zhdaniyk"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "django-rest-framework (>=0.1.0,<0.2.0)",
+    "openai (>=2.30.0,<3.0.0)",
+    "dependency-injector (>=4.49.0,<5.0.0)",
+    "pgvector (>=0.4.2,<0.5.0)",
+    "python-decouple (>=3.8,<4.0)",
+    "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "django-cors-headers (>=4.9.0,<5.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

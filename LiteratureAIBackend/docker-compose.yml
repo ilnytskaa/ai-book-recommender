@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: literature_ai_db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-literature_ai}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # api:
+  #   build: .
+  #   container_name: literature_ai_api
+  #   command: >
+  #     sh -c "python manage.py migrate &&
+  #            python manage.py collectstatic --noinput &&
+  #            gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120"
+  #   volumes:
+  #     - .:/app
+  #   ports:
+  #     - "8000:8000"
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - DB_HOST=db
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+
+volumes:
+  postgres_data:
