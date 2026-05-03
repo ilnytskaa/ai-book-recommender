@@ -1,13 +1,8 @@
 """Recommendations HTTP views — async Django views for non-blocking I/O."""
-import asyncio
 import logging
 
 from dependency_injector.wiring import Provide, inject
-from django.http import JsonResponse
-from django.utils.decorators import method_decorator
-from django.views import View
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.parsers import JSONParser
+from drf_spectacular.utils import extend_schema
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,6 +10,7 @@ from rest_framework.views import APIView
 from core.container import Container
 from apps.recommendations.serializers import (
     RecommendationRequestSerializer,
+    RecommendationResponseSerializer,
     SearchQueryLogSerializer,
 )
 from apps.recommendations.services.recommendation_service import RecommendationService
@@ -39,6 +35,12 @@ class RecommendationView(APIView):
         super().__init__(**kwargs)
         self._service = recommendation_service
 
+    @extend_schema(
+        summary='Get book recommendations',
+        description='Accepts a text query and returns book recommendations using RAG (semantic search + GPT).',
+        request=RecommendationRequestSerializer,
+        responses=RecommendationResponseSerializer,
+    )
     def post(self, request: Request) -> Response:
         serializer = RecommendationRequestSerializer(data=request.data)
         if not serializer.is_valid():
@@ -73,6 +75,10 @@ class SearchHistoryView(APIView):
         super().__init__(**kwargs)
         self._repo = recommendation_repository
 
+    @extend_schema(
+        summary='Search history',
+        responses=SearchQueryLogSerializer(many=True),
+    )
     def get(self, request: Request) -> Response:
         logs = self._repo.get_recent_logs(limit=50)
         serializer = SearchQueryLogSerializer(logs, many=True)

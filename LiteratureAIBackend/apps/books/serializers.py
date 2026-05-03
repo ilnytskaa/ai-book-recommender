@@ -27,8 +27,8 @@ class BookCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_year(self, value):
-        if value is not None and not (0 < value <= 2100):
-            raise serializers.ValidationError('Рік має бути у діапазоні 1–2100.')
+        if value is not None and not (-3000 <= value <= 2100):
+            raise serializers.ValidationError('Рік має бути у діапазоні від -3000 до 2100.')
         return value
 
 
