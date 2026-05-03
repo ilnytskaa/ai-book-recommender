@@ -2,10 +2,8 @@
 import logging
 
 from dependency_injector.wiring import Provide, inject
-from django.http import JsonResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status
-from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
