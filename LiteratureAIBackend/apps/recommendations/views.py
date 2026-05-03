@@ -50,9 +50,10 @@ class RecommendationView(APIView):
             )
 
         query: str = serializer.validated_data['query']
-        logger.info('Recommendation request: "%s"', query)
+        use_rag: bool = serializer.validated_data['use_rag']
+        logger.info('Recommendation request: "%s" (use_rag=%s)', query, use_rag)
 
-        result = self._service.get_recommendations(query)
+        result = self._service.get_recommendations(query, use_rag=use_rag)
         return Response(result)
 
     def options(self, request: Request, *args, **kwargs) -> Response:

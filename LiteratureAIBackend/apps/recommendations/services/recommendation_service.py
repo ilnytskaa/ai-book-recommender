@@ -13,6 +13,11 @@ from apps.recommendations.repositories.recommendation_repository import Recommen
 
 logger = logging.getLogger(__name__)
 
+_SYSTEM_MESSAGE = (
+    'Ти — експерт з літератури. '
+    'Відповідай тільки валідним JSON масивом без додаткового тексту.'
+)
+
 FALLBACK_BOOKS: List[Dict[str, Any]] = [
     {
         'title': '1984',
@@ -45,13 +50,6 @@ FALLBACK_BOOKS: List[Dict[str, Any]] = [
 
 
 class RecommendationService(IRecommendationService):
-    """
-    Orchestrates the full recommendation pipeline:
-    1. Retrieve relevant books from DB via RAG
-    2. Build a context-aware prompt
-    3. Call OpenAI to rank/explain recommendations
-    4. Log the query
-    """
 
     def __init__(
         self,
@@ -65,38 +63,54 @@ class RecommendationService(IRecommendationService):
         self._model = model
         self._repo = recommendation_repository
 
-    def get_recommendations(self, query: str) -> Dict[str, Any]:
+    def get_recommendations(self, query: str, use_rag: bool = True) -> Dict[str, Any]:
         start = time.monotonic()
-        used_rag = False
         used_fallback = False
+        used_rag_actual = False
 
-        context_books = self._rag.retrieve_relevant_books(query)
-        used_rag = len(context_books) > 0
+        if use_rag:
+            context_books = self._rag.retrieve_relevant_books(query)
+            used_rag_actual = bool(context_books)
 
-        if self._client and context_books:
-            try:
-                recommendations = self._call_openai(query, context_books)
-            except Exception as exc:
-                logger.error('OpenAI call failed: %s', exc)
+            if self._client and context_books:
+                try:
+                    recommendations = self._call_openai_with_context(query, context_books)
+                except Exception as exc:
+                    logger.error('OpenAI call failed: %s', exc, exc_info=True)
+                    recommendations = self._format_fallback(context_books, query)
+                    used_fallback = True
+            elif context_books:
                 recommendations = self._format_fallback(context_books, query)
                 used_fallback = True
-        elif context_books:
-            recommendations = self._format_fallback(context_books, query)
-            used_fallback = True
+            else:
+                recommendations = self._get_static_fallback(query)
+                used_fallback = True
         else:
-            recommendations = self._get_static_fallback(query)
-            used_fallback = True
+            if self._client:
+                try:
+                    recommendations = self._call_openai_no_context(query)
+                except Exception as exc:
+                    logger.error('OpenAI call failed: %s', exc, exc_info=True)
+                    recommendations = self._get_static_fallback(query)
+                    used_fallback = True
+            else:
+                recommendations = self._get_static_fallback(query)
+                used_fallback = True
 
         elapsed_ms = int((time.monotonic() - start) * 1000)
         self._repo.log_query(
             query=query,
             results_count=len(recommendations),
-            used_rag=used_rag,
+            used_rag=used_rag_actual,
             used_fallback=used_fallback,
             processing_time_ms=elapsed_ms,
         )
 
-        result: Dict[str, Any] = {'recommendations': recommendations, 'query': query}
+        result: Dict[str, Any] = {
+            'recommendations': recommendations,
+            'query': query,
+            'used_rag': used_rag_actual,
+        }
         if used_fallback and not self._client:
             result['note'] = (
                 'Демонстраційні рекомендації з бази даних. '
@@ -104,7 +118,7 @@ class RecommendationService(IRecommendationService):
             )
         return result
 
-    def _call_openai(
+    def _call_openai_with_context(
         self, query: str, context_books: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         books_text = '\n'.join(
@@ -121,30 +135,40 @@ class RecommendationService(IRecommendationService):
             f'[{{"title":"...","author":"...","description":"...","genre":"...","year":0,'
             f'"rating":0.0,"reason":"..."}}]'
         )
-
-        completion = self._client.chat.completions.create(
-            model=self._model,
-            messages=[
-                {
-                    'role': 'system',
-                    'content': (
-                        'Ти — експерт з літератури. '
-                        'Відповідай тільки валідним JSON масивом без додаткового тексту.'
-                    ),
-                },
-                {'role': 'user', 'content': prompt},
-            ],
-            max_tokens=2000,
-            temperature=0.7,
-        )
-
-        response_text = completion.choices[0].message.content or ''
         try:
-            recommendations = json.loads(response_text)
+            return self._call_openai_raw(prompt)
         except json.JSONDecodeError:
             logger.warning('OpenAI returned invalid JSON, using context books as fallback.')
             return self._format_fallback(context_books, query)
 
+    def _call_openai_no_context(self, query: str) -> List[Dict[str, Any]]:
+        prompt = (
+            f'Ти — досвідчений бібліотекар та літературний критик.\n'
+            f'Користувач описав свій запит: "{query}"\n\n'
+            f'Порекомендуй 3-5 книг зі своїх знань, які найкраще підходять до цього запиту. '
+            f'Відповідай ТІЛЬКИ валідним JSON масивом:\n'
+            f'[{{"title":"...","author":"...","description":"...","genre":"...","year":0,'
+            f'"rating":0.0,"reason":"..."}}]'
+        )
+        try:
+            return self._call_openai_raw(prompt)
+        except json.JSONDecodeError:
+            logger.warning('OpenAI returned invalid JSON (no-RAG mode).')
+            return self._get_static_fallback(query)
+
+    def _call_openai_raw(self, prompt: str) -> List[Dict[str, Any]]:
+        completion = self._client.chat.completions.create(
+            model=self._model,
+            messages=[
+                {'role': 'system', 'content': _SYSTEM_MESSAGE},
+                {'role': 'user', 'content': prompt},
+            ],
+            max_tokens=2000,
+            temperature=0.7,
+            timeout=30,
+        )
+        response_text = completion.choices[0].message.content or ''
+        recommendations = json.loads(response_text)
         return [
             r for r in recommendations
             if r.get('title') and r.get('author') and r.get('reason')
@@ -154,9 +178,8 @@ class RecommendationService(IRecommendationService):
     def _format_fallback(
         books: List[Dict[str, Any]], query: str
     ) -> List[Dict[str, Any]]:
-        result = []
-        for b in books[:5]:
-            result.append({
+        return [
+            {
                 'title': b['title'],
                 'author': b['author'],
                 'description': b['description'],
@@ -164,8 +187,9 @@ class RecommendationService(IRecommendationService):
                 'year': b.get('year'),
                 'rating': b.get('rating'),
                 'reason': f'Підібрано за запитом "{query}" на основі семантичного пошуку в базі даних.',
-            })
-        return result
+            }
+            for b in books[:5]
+        ]
 
     @staticmethod
     def _get_static_fallback(query: str) -> List[Dict[str, Any]]:

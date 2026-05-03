@@ -13,6 +13,7 @@ class RecommendationRequestSerializer(serializers.Serializer):
             'max_length': 'Запит занадто довгий (максимум 1000 символів).',
         }
     )
+    use_rag = serializers.BooleanField(default=True)
 
 
 class BookRecommendationSerializer(serializers.Serializer):
@@ -28,6 +29,7 @@ class BookRecommendationSerializer(serializers.Serializer):
 class RecommendationResponseSerializer(serializers.Serializer):
     recommendations = BookRecommendationSerializer(many=True)
     query = serializers.CharField()
+    used_rag = serializers.BooleanField()
     note = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
