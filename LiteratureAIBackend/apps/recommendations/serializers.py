@@ -8,9 +8,9 @@ class RecommendationRequestSerializer(serializers.Serializer):
         min_length=2,
         max_length=1000,
         error_messages={
-            'blank': 'Запит не може бути порожнім.',
-            'min_length': 'Запит занадто короткий (мінімум 2 символи).',
-            'max_length': 'Запит занадто довгий (максимум 1000 символів).',
+            'blank': 'Request can not be blank.',
+            'min_length': 'Request too short (minumum 2 symbols).',
+            'max_length': 'Request too long (maximun 1000 symbols).',
         }
     )
     use_rag = serializers.BooleanField(default=True)
@@ -29,7 +29,6 @@ class BookRecommendationSerializer(serializers.Serializer):
 class RecommendationResponseSerializer(serializers.Serializer):
     recommendations = BookRecommendationSerializer(many=True)
     query = serializers.CharField()
-    used_rag = serializers.BooleanField()
     note = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
