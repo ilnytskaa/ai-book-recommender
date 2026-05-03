@@ -19,6 +19,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     'rest_framework',
     'corsheaders',
+    'drf_spectacular',
 ]
 
 LOCAL_APPS = [
@@ -97,6 +98,13 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Literature AI API',
+    'DESCRIPTION': 'API для AI-рекомендацій книг',
+    'VERSION': '1.0.0',
 }
 
 CORS_ALLOWED_ORIGINS = config(
