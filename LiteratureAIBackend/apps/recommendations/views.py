@@ -12,6 +12,7 @@ from apps.recommendations.serializers import (
     RecommendationRequestSerializer,
     RecommendationResponseSerializer,
     SearchQueryLogSerializer,
+    ComparisonStatsSerializer,
 )
 from apps.recommendations.services.recommendation_service import RecommendationService
 from apps.recommendations.repositories.recommendation_repository import RecommendationRepository
@@ -50,10 +51,10 @@ class RecommendationView(APIView):
             )
 
         query: str = serializer.validated_data['query']
-        use_rag: bool = serializer.validated_data['use_rag']
-        logger.info('Recommendation request: "%s" (use_rag=%s)', query, use_rag)
+        search_mode: str = serializer.validated_data['search_mode']
+        logger.info('Recommendation request: "%s" (search_mode=%s)', query, search_mode)
 
-        result = self._service.get_recommendations(query, use_rag=use_rag)
+        result = self._service.get_recommendations(query, search_mode=search_mode)
         return Response(result)
 
     def options(self, request: Request, *args, **kwargs) -> Response:
@@ -84,3 +85,23 @@ class SearchHistoryView(APIView):
         logs = self._repo.get_recent_logs(limit=50)
         serializer = SearchQueryLogSerializer(logs, many=True)
         return Response(serializer.data)
+
+
+class ComparisonStatsView(APIView):
+    """GET /api/recommendations/stats/ — aggregated quality averages RAG vs GPT."""
+
+    @inject
+    def __init__(
+        self,
+        recommendation_repository: RecommendationRepository = Provide[Container.recommendation_repository],
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self._repo = recommendation_repository
+
+    @extend_schema(
+        summary='RAG vs GPT comparison stats',
+        responses=ComparisonStatsSerializer,
+    )
+    def get(self, request: Request) -> Response:
+        return Response(self._repo.get_comparison_stats())

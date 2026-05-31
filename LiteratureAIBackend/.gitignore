@@ -18,3 +18,7 @@ staticfiles/
 media/
 
 .env
+
+# Dataset files — place your CSV/JSON datasets in the data/ folder
+data/
+!data/.gitkeep

@@ -13,7 +13,10 @@ class RecommendationRequestSerializer(serializers.Serializer):
             'max_length': 'Request too long (maximun 1000 symbols).',
         }
     )
-    use_rag = serializers.BooleanField(default=True)
+    search_mode = serializers.ChoiceField(
+        choices=['rag', 'gpt', 'keyword'],
+        default='rag',
+    )
 
 
 class BookRecommendationSerializer(serializers.Serializer):
@@ -24,12 +27,23 @@ class BookRecommendationSerializer(serializers.Serializer):
     year = serializers.IntegerField(required=False, allow_null=True)
     rating = serializers.FloatField(required=False, allow_null=True)
     reason = serializers.CharField()
+    in_local_db = serializers.BooleanField(default=False)
+
+
+class QualityScoreSerializer(serializers.Serializer):
+    relevance = serializers.IntegerField()
+    explainability = serializers.IntegerField()
+    db_binding = serializers.IntegerField()
+    hallucination_risk = serializers.CharField()
 
 
 class RecommendationResponseSerializer(serializers.Serializer):
     recommendations = BookRecommendationSerializer(many=True)
     query = serializers.CharField()
+    search_mode = serializers.CharField()
+    not_found = serializers.BooleanField(default=False)
     note = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    quality_score = QualityScoreSerializer(required=False)
 
 
 class SearchQueryLogSerializer(serializers.ModelSerializer):
@@ -37,3 +51,17 @@ class SearchQueryLogSerializer(serializers.ModelSerializer):
         model = SearchQueryLog
         fields = ['id', 'query', 'results_count', 'used_rag', 'used_fallback',
                   'processing_time_ms', 'created_at']
+
+
+class ModeStatsSerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+    relevance = serializers.FloatField(allow_null=True)
+    explainability = serializers.FloatField(allow_null=True)
+    db_binding = serializers.FloatField(allow_null=True)
+    controllability = serializers.FloatField(allow_null=True)
+
+
+class ComparisonStatsSerializer(serializers.Serializer):
+    rag = ModeStatsSerializer()
+    gpt = ModeStatsSerializer()
+    keyword = ModeStatsSerializer()

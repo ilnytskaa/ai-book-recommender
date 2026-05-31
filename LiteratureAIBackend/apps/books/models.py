@@ -6,9 +6,9 @@ class Book(models.Model):
     """Book model with vector embedding for RAG-based recommendations."""
 
     title = models.CharField('Назва', max_length=512)
-    author = models.CharField('Автор', max_length=255)
+    author = models.CharField('Автор', max_length=512)
     description = models.TextField('Опис')
-    genre = models.CharField('Жанр', max_length=128)
+    genre = models.CharField('Жанр', max_length=256)
     year = models.IntegerField('Рік видання', null=True, blank=True)
     rating = models.FloatField('Рейтинг', null=True, blank=True)
 

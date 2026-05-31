@@ -67,7 +67,7 @@ class RAGService(IRAGService):
             return self._keyword_search(query, top_k)
 
     def _keyword_search(self, query: str, top_k: int) -> List[Dict[str, Any]]:
+        # RAG is honest: if text search finds nothing, return empty rather than
+        # serving unrelated books from the full DB.
         books = self._repo.search_by_text(query)
-        if not books:
-            books = self._repo.get_all()
         return [_book_to_dict(b) for b in books[:top_k]]

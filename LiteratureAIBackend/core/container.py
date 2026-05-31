@@ -49,4 +49,5 @@ class Container(containers.DeclarativeContainer):
         api_key=providers.Callable(lambda: settings.OPENAI_API_KEY),
         model=providers.Callable(lambda: settings.RECOMMENDATION_MODEL),
         recommendation_repository=recommendation_repository,
+        book_repository=book_repository,
     )

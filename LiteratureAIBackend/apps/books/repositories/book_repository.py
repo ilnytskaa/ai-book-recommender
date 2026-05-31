@@ -69,3 +69,11 @@ class BookRepository(IRepository[Book]):
 
     def count_with_embeddings(self) -> int:
         return Book.objects.filter(embedding__isnull=False).count()
+
+    def titles_in_db(self, titles: List[str]) -> set:
+        """Returns lowercase titles from the given list that exist in the DB."""
+        from django.db.models import Q
+        q = Q()
+        for title in titles:
+            q |= Q(title__iexact=title)
+        return {t.lower() for t in Book.objects.filter(q).values_list('title', flat=True)}

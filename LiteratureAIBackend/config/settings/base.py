@@ -119,3 +119,7 @@ EMBEDDING_MODEL = 'text-embedding-3-small'
 EMBEDDING_DIMENSIONS = 1536
 RECOMMENDATION_MODEL = 'gpt-4o-mini'
 RAG_TOP_K = 8
+
+KAGGLE_USERNAME = config('KAGGLE_USERNAME', default='')
+KAGGLE_KEY = config('KAGGLE_KEY', default='')
+DATASET_DIR = BASE_DIR / 'data'

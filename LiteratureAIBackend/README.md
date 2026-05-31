@@ -1,6 +1,6 @@
 # LiteratureAI — Backend
 
-Python async Django REST Framework backend для системи рекомендацій книг на основі RAG (Retrieval-Augmented Generation).
+Python Django REST Framework backend для системи рекомендацій книг на основі RAG (Retrieval-Augmented Generation).
 
 ## Архітектура
 
@@ -27,14 +27,17 @@ LiteratureAIBackend/
 │   │   └── services/        # BookService (Service Layer Pattern)
 │   └── recommendations/     # RAG рекомендації
 │       ├── models.py        # SearchQueryLog
-│       ├── views.py         # RecommendationView (async-ready)
+│       ├── views.py         # RecommendationView
 │       ├── services/
-│       │   ├── embedding_service.py     # OpenAI Embeddings
-│       │   ├── rag_service.py           # RAG + cosine similarity
+│       │   ├── embedding_service.py      # OpenAI Embeddings
+│       │   ├── rag_service.py            # RAG + cosine similarity
 │       │   └── recommendation_service.py # Orchestration + GPT
 │       └── repositories/    # RecommendationRepository
 ├── scripts/
-│   └── seed_books.py        # 50+ книг з описами українською
+│   ├── seed_books.py        # Вбудований датасет — 50+ книг з описами українською
+│   ├── download_dataset.py  # Завантажити датасет з Kaggle → data/
+│   └── import_dataset.py    # Імпортувати CSV/JSON до БД з маппінгом колонок
+├── data/                    # Датасети (у .gitignore)
 └── docker-compose.yml       # PostgreSQL (pgvector) + API
 ```
 
@@ -66,7 +69,7 @@ OpenAI Embeddings API  ──►  query_vector (1536 dim)
 pgvector cosine similarity search
       │  (знаходить top-8 найрелевантніших книг)
       ▼
-OpenAI GPT-3.5-turbo
+OpenAI GPT-4o-mini
   prompt = query + 8 books context
       │
       ▼
@@ -117,23 +120,86 @@ OpenAI GPT-3.5-turbo
 }
 ```
 
+## Датасет для RAG
+
+Рекомендований датасет: **[dylanjcastillo/7k-books-with-metadata](https://www.kaggle.com/datasets/dylanjcastillo/7k-books-with-metadata)**
+
+~7 000 книг з повними описами, жанрами і рейтингами — ідеально для ембедінгів.
+
+| Колонка у файлі | Поле моделі |
+|-----------------|-------------|
+| `title` | `title` |
+| `authors` | `author` |
+| `description` | `description` |
+| `categories` | `genre` |
+| `published_year` | `year` |
+| `average_rating` | `rating` |
+
+### Крок 1 — Завантажити
+
+```bash
+python scripts/download_dataset.py dylanjcastillo/7k-books-with-metadata
+```
+
+Потрібні змінні у `.env`:
+```
+KAGGLE_USERNAME=your_username
+KAGGLE_KEY=your_api_key
+```
+
+Ключ: [kaggle.com/settings](https://www.kaggle.com/settings) → API → **Create New Token**.
+
+### Крок 2 — Переглянути колонки (опціонально)
+
+```bash
+python scripts/import_dataset.py dylanjcastillo_7k-books-with-metadata/books.csv --preview
+```
+
+### Крок 3 — Імпортувати до БД з ембедінгами
+
+```bash
+python scripts/import_dataset.py dylanjcastillo_7k-books-with-metadata/books.csv \
+    --mapping title=title,author=authors,description=description,genre=categories,year=published_year,rating=average_rating \
+    --embeddings
+```
+
+- `--mapping` — зіставлення полів моделі з колонками файлу. Обов'язкові: `title`, `author`, `description`, `genre`
+- `--embeddings` — генерує OpenAI ембедінги для всіх нових книг після імпорту
+- Дублікати (однакові title + author) пропускаються автоматично
+
+> Файли датасетів зберігаються у `data/` — папка додана до `.gitignore`.
+
+---
+
+## Вбудований датасет (seed)
+
+50+ класичних книг з описами українською — для швидкого старту без Kaggle:
+
+```bash
+python scripts/seed_books.py --embeddings
+```
+
+---
+
 ## Запуск через Docker
 
 ```bash
 # 1. Скопіювати і налаштувати .env
 cp .env.example .env
-# Відкрийте .env і заповніть OPENAI_API_KEY, DB_PASSWORD тощо
 
 # 2. Запустити контейнери
 docker-compose up --build
 
-# 3. Заповнити базу даних книгами
-docker-compose exec api python scripts/seed_books.py
+# 3. Завантажити датасет і заповнити БД
+docker-compose exec api python scripts/download_dataset.py dylanjcastillo/7k-books-with-metadata
+docker-compose exec api python scripts/import_dataset.py dylanjcastillo_7k-books-with-metadata/books.csv \
+    --mapping title=title,author=authors,description=description,genre=categories,year=published_year,rating=average_rating \
+    --embeddings
 
-# 4. Згенерувати ембедінги (потрібен OpenAI API ключ)
+# АБО використати вбудований seed (50+ книг)
 docker-compose exec api python scripts/seed_books.py --embeddings
 
-# 5. Створити суперкористувача Django Admin
+# 4. Створити суперкористувача Django Admin
 docker-compose exec api python manage.py createsuperuser
 ```
 
@@ -142,61 +208,57 @@ API буде доступний на http://localhost:8000
 ## Локальний запуск (без Docker)
 
 ```bash
-# 1. Створити та активувати venv
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-
-# 2. Встановити залежності
+# 1. Встановити залежності
 pip install -r requirements.txt
 
-# 3. Налаштувати .env
+# 2. Налаштувати .env
 cp .env.example .env
-# Заповніть DB_HOST=localhost та інші параметри
 
-# 4. Переконайтесь що PostgreSQL запущено з pgvector розширенням:
-# docker run -d --name pgvector -e POSTGRES_PASSWORD=postgres -p 5432:5432 pgvector/pgvector:pg16
+# 3. Запустити PostgreSQL з pgvector
+docker run -d --name pgvector -e POSTGRES_PASSWORD=postgres -p 5432:5432 pgvector/pgvector:pg16
 
-# 5. Виконати міграції
+# 4. Виконати міграції
 python manage.py migrate
 
-# 6. Заповнити БД
-python scripts/seed_books.py --embeddings
+# 5. Завантажити датасет і заповнити БД
+python scripts/download_dataset.py dylanjcastillo/7k-books-with-metadata
+python scripts/import_dataset.py dylanjcastillo_7k-books-with-metadata/books.csv \
+    --mapping title=title,author=authors,description=description,genre=categories,year=published_year,rating=average_rating \
+    --embeddings
 
-# 7. Запустити сервер
+# 6. Запустити сервер
 python manage.py runserver
 ```
 
 ## Тести
 
 ```bash
-# Запустити всі тести з покриттям
+# Всі тести з покриттям
 pytest
 
-# Тільки тести books
+# Тільки books
 pytest apps/books/tests/
 
-# Тільки тести recommendations
+# Тільки recommendations
 pytest apps/recommendations/tests/
 
-# Покриття у HTML
+# HTML звіт покриття
 pytest --cov=apps --cov-report=html
 ```
-
-## Підключення Frontend
-
-У файлі `LiteratureAI/.env` додайте:
-```
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-Компонент `SearchForm.tsx` вже оновлений для використання цієї змінної.
 
 ## Django Admin
 
 Доступний на http://localhost:8000/admin/
 
 - **Книги** — перегляд, пошук, фільтрація книг у БД
-- **Логи запитів** — аналітика: скільки запитів, RAG vs fallback, час відповіді
+- **Логи запитів** — аналітика: кількість запитів, RAG vs fallback, час відповіді
+
+## Підключення Frontend
+
+У файлі `LiteratureAI/.env`:
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
 
 ## Змінні оточення
 
@@ -209,5 +271,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 | `DB_PASSWORD` | Пароль БД | `postgres` |
 | `DB_HOST` | Хост БД | `localhost` |
 | `DB_PORT` | Порт БД | `5432` |
-| `OPENAI_API_KEY` | Ключ OpenAI API | *(порожньо = fallback)* |
+| `OPENAI_API_KEY` | Ключ OpenAI API | *(порожньо = без ембедінгів)* |
+| `KAGGLE_USERNAME` | Kaggle username | *(потрібен для download_dataset.py)* |
+| `KAGGLE_KEY` | Kaggle API key | *(потрібен для download_dataset.py)* |
 | `CORS_ALLOWED_ORIGINS` | Дозволені CORS origins | `http://localhost:3000` |
