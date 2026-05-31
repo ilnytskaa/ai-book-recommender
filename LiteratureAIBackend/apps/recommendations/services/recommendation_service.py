@@ -15,49 +15,49 @@ from apps.books.repositories.book_repository import BookRepository
 logger = logging.getLogger(__name__)
 
 _SYSTEM_MESSAGE = (
-    'Ти — експерт з літератури. '
-    'Відповідай тільки валідним JSON масивом без додаткового тексту.'
+    'You are a literature expert. '
+    'Reply only with a valid JSON array and no additional text.'
 )
 
 FALLBACK_BOOKS: List[Dict[str, Any]] = [
     {
         'title': '1984',
-        'author': 'Джордж Орвелл',
-        'description': 'Антиутопічний роман про тоталітарне суспільство майбутнього, де Великий Брат стежить за кожним кроком громадян.',
-        'genre': 'Антиутопія',
+        'author': 'George Orwell',
+        'description': 'A dystopian novel set in a totalitarian future society where Big Brother watches every move of its citizens.',
+        'genre': 'Dystopia',
         'year': 1949,
         'rating': 4.8,
-        'reason': 'Класична книга, яка змушує замислитися про свободу, приватність та контроль влади.',
+        'reason': 'A classic that makes you think about freedom, privacy, and the control of power.',
     },
     {
-        'title': 'Маленький принц',
-        'author': 'Антуан де Сент-Екзюпері',
-        'description': 'Філософська казка про маленького принца, який подорожує планетами та відкриває важливі життєві істини.',
-        'genre': 'Філософська казка',
+        'title': 'The Little Prince',
+        'author': 'Antoine de Saint-Exupéry',
+        'description': 'A philosophical tale about a little prince who travels between planets and discovers essential truths about life.',
+        'genre': 'Philosophical Fiction',
         'year': 1943,
         'rating': 4.6,
-        'reason': 'Зворушлива історія про дружбу, любов та сенс життя.',
+        'reason': 'A touching story about friendship, love, and the meaning of life.',
     },
     {
-        'title': 'Кобзар',
-        'author': 'Тарас Шевченко',
-        'description': 'Збірка поезій великого українського поета, символ української літератури та самосвідомості.',
-        'genre': 'Поезія',
-        'year': 1840,
-        'rating': 4.9,
-        'reason': 'Основа української літератури, обов\'язкова для розуміння української культури.',
+        'title': 'Brave New World',
+        'author': 'Aldous Huxley',
+        'description': 'A dystopian novel set in a futuristic World State where citizens are conditioned for happiness and social stability.',
+        'genre': 'Dystopia',
+        'year': 1932,
+        'rating': 4.5,
+        'reason': 'A thought-provoking exploration of technology, freedom, and what it means to be human.',
     },
 ]
 
 
 _NOT_FOUND_MESSAGES = {
     'rag': (
-        'У локальній базі не знайдено достатньо релевантних книг для цього запиту. '
-        'Спробуйте уточнити або змінити запит.'
+        'No sufficiently relevant books were found in the local database for this query. '
+        'Try rephrasing or broadening your request.'
     ),
     'keyword': (
-        'За вказаними ключовими словами нічого не знайдено в базі. '
-        'Спробуйте простіші або інші слова.'
+        'No results found in the database for the given keywords. '
+        'Try simpler or different words.'
     ),
 }
 
@@ -146,8 +146,8 @@ class RecommendationService(IRecommendationService):
             result['note'] = _NOT_FOUND_MESSAGES.get(search_mode, '')
         elif used_fallback and not self._client:
             result['note'] = (
-                'Демонстраційні рекомендації з бази даних. '
-                'Додайте OpenAI API ключ для персоналізованих відповідей.'
+                'Demo recommendations from the database. '
+                'Add an OpenAI API key for personalised responses.'
             )
         return result
 
@@ -161,7 +161,7 @@ class RecommendationService(IRecommendationService):
                 'genre': b.genre,
                 'year': b.year,
                 'rating': b.rating,
-                'reason': f'Знайдено за ключовими словами "{query}" у назві, авторі або описі.',
+                'reason': f'Found by keywords "{query}" in title, author, or description.',
                 'in_local_db': True,
             }
             for b in books[:5]
@@ -180,7 +180,7 @@ class RecommendationService(IRecommendationService):
                 'relevance': relevance,
                 'explainability': 2,
                 'db_binding': 5,
-                'hallucination_risk': 'відсутній',
+                'hallucination_risk': 'none',
             }
 
         avg_reason = (
@@ -200,17 +200,17 @@ class RecommendationService(IRecommendationService):
 
         if search_mode == 'rag':
             db_binding = 5
-            hallucination_risk = 'низький'
+            hallucination_risk = 'low'
         else:  # gpt
             in_db = sum(1 for r in recommendations if r.get('in_local_db'))
             db_binding = round((in_db / count) * 5) if count else 0
             not_in_db_ratio = 1 - (in_db / count) if count else 1
             if not_in_db_ratio <= 0.2:
-                hallucination_risk = 'низький'
+                hallucination_risk = 'low'
             elif not_in_db_ratio <= 0.6:
-                hallucination_risk = 'середній'
+                hallucination_risk = 'medium'
             else:
-                hallucination_risk = 'високий'
+                hallucination_risk = 'high'
 
         return {
             'relevance': relevance,
@@ -221,7 +221,7 @@ class RecommendationService(IRecommendationService):
 
     @staticmethod
     def _risk_to_controllability(risk: str) -> int:
-        return {'відсутній': 5, 'низький': 5, 'середній': 3, 'високий': 1}.get(risk, 3)
+        return {'none': 5, 'low': 5, 'medium': 3, 'high': 1}.get(risk, 3)
 
     def _annotate_in_local_db(
         self, recommendations: List[Dict[str, Any]], search_mode: str
@@ -239,16 +239,16 @@ class RecommendationService(IRecommendationService):
         self, query: str, context_books: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         books_text = '\n'.join(
-            f'- «{b["title"]}» ({b["author"]}, {b.get("year", "?")}): {b["description"]}'
+            f'- "{b["title"]}" ({b["author"]}, {b.get("year", "?")}): {b["description"]}'
             for b in context_books
         )
         prompt = (
-            f'Ти — досвідчений бібліотекар та літературний критик.\n'
-            f'Користувач описав свій запит: "{query}"\n\n'
-            f'З нашої бази даних ми попередньо відібрали ці книги як потенційно релевантні:\n'
+            f'You are an experienced librarian and literary critic.\n'
+            f'The user described their request: "{query}"\n\n'
+            f'From our database we pre-selected these books as potentially relevant:\n'
             f'{books_text}\n\n'
-            f'Вибери 3-5 найкращих книг з наведеного списку та поясни, '
-            f'чому саме вони підходять. Відповідай ТІЛЬКИ валідним JSON масивом:\n'
+            f'Choose the 3-5 best books from the list above and explain why they are a good fit. '
+            f'Reply ONLY with a valid JSON array:\n'
             f'[{{"title":"...","author":"...","description":"...","genre":"...","year":0,'
             f'"rating":0.0,"reason":"..."}}]'
         )
@@ -260,10 +260,10 @@ class RecommendationService(IRecommendationService):
 
     def _call_openai_no_context(self, query: str) -> List[Dict[str, Any]]:
         prompt = (
-            f'Ти — досвідчений бібліотекар та літературний критик.\n'
-            f'Користувач описав свій запит: "{query}"\n\n'
-            f'Порекомендуй 3-5 книг зі своїх знань, які найкраще підходять до цього запиту. '
-            f'Відповідай ТІЛЬКИ валідним JSON масивом:\n'
+            f'You are an experienced librarian and literary critic.\n'
+            f'The user described their request: "{query}"\n\n'
+            f'Recommend 3-5 books from your knowledge that best fit this request. '
+            f'Reply ONLY with a valid JSON array:\n'
             f'[{{"title":"...","author":"...","description":"...","genre":"...","year":0,'
             f'"rating":0.0,"reason":"..."}}]'
         )
@@ -303,7 +303,7 @@ class RecommendationService(IRecommendationService):
                 'genre': b['genre'],
                 'year': b.get('year'),
                 'rating': b.get('rating'),
-                'reason': f'Підібрано за запитом "{query}" на основі семантичного пошуку в базі даних.',
+                'reason': f'Selected for query "{query}" based on semantic search in the database.',
             }
             for b in books[:5]
         ]
@@ -311,6 +311,6 @@ class RecommendationService(IRecommendationService):
     @staticmethod
     def _get_static_fallback(query: str) -> List[Dict[str, Any]]:
         return [
-            {**b, 'reason': f'Підібрано для запиту "{query}": {b["reason"]}'}
+            {**b, 'reason': f'Selected for query "{query}": {b["reason"]}'}
             for b in FALLBACK_BOOKS
         ]

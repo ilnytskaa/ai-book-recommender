@@ -46,7 +46,7 @@ class RecommendationView(APIView):
         serializer = RecommendationRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(
-                {'error': serializer.errors.get('query', ['Невірний запит'])[0]},
+                {'error': serializer.errors.get('query', ['Invalid request'])[0]},
                 status=400,
             )
 
