@@ -9,10 +9,11 @@ import LoginForm from '@/components/LoginForm';
 import RegisterForm from '@/components/RegisterForm';
 import UserProfile from '@/components/UserProfile';
 import Stats from '@/components/Stats';
+import ComparisonChart from '@/components/ComparisonChart';
 import ThemeDebug from '@/components/ThemeDebug';
 
 type AuthMode = 'login' | 'register' | null;
-type Page = 'home' | 'profile';
+type Page = 'home' | 'profile' | 'comparison';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -174,6 +175,22 @@ function AppContent() {
     </section>
   );
 
+  const renderComparisonPage = () => (
+    <section className="bg-gray-50 dark:bg-gray-900 py-12 min-h-screen">
+      <div className="mx-auto px-4 max-w-3xl container">
+        <div className="mb-8 text-center">
+          <h1 className="font-bold text-gray-900 dark:text-white text-3xl mb-2">
+            Порівняння RAG vs GPT
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            Агрегована статистика якості відповідей на основі реальних запитів
+          </p>
+        </div>
+        <ComparisonChart />
+      </div>
+    </section>
+  );
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       <Navigation
@@ -185,6 +202,7 @@ function AppContent() {
       <main>
         {currentPage === 'home' && renderHomePage()}
         {currentPage === 'profile' && renderProfilePage()}
+        {currentPage === 'comparison' && renderComparisonPage()}
       </main>
 
       {renderAuthModal()}

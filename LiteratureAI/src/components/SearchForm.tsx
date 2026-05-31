@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Loader2, BookOpen, Star, Calendar, User, Info, Heart, Database, Brain } from 'lucide-react';
+import { Search, Loader2, BookOpen, Star, Calendar, User, Info, Heart, Database, Brain, CheckCircle, XCircle, SearchX } from 'lucide-react';
 import SearchAnimation from './SearchAnimation';
 import { addToSearchHistory } from './SearchHistory';
 import { addToWishlist } from './Wishlist';
@@ -16,13 +16,25 @@ interface BookRecommendation {
   year?: number;
   rating?: number;
   reason: string;
+  in_local_db?: boolean;
+}
+
+type SearchMode = 'rag' | 'gpt' | 'keyword';
+
+interface QualityScore {
+  relevance: number;
+  explainability: number;
+  db_binding: number;
+  hallucination_risk: 'відсутній' | 'низький' | 'середній' | 'високий';
 }
 
 interface ApiResponse {
   recommendations: BookRecommendation[];
   query: string;
-  used_rag: boolean;
+  search_mode: SearchMode;
+  not_found?: boolean;
   note?: string;
+  quality_score?: QualityScore;
 }
 
 interface SearchFormProps {
@@ -31,12 +43,77 @@ interface SearchFormProps {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
+function ScoreDots({ value }: { value: number }) {
+  return (
+    <span className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }, (_, i) => (
+        <span
+          key={i}
+          className={`inline-block w-3 h-3 rounded-full ${
+            i < value
+              ? value >= 4
+                ? 'bg-green-500'
+                : value >= 3
+                  ? 'bg-yellow-400'
+                  : 'bg-red-400'
+              : 'bg-gray-200 dark:bg-gray-600'
+          }`}
+        />
+      ))}
+      <span className="ml-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+        {value}/5
+      </span>
+    </span>
+  );
+}
+
+function QualityScoreCard({ score }: { score: QualityScore }) {
+  const riskColors: Record<string, string> = {
+    відсутній: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700',
+    низький:   'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700',
+    середній:  'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700',
+    високий:   'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700',
+  };
+
+  const rows: { label: string; node: React.ReactNode }[] = [
+    { label: 'Релевантність', node: <ScoreDots value={score.relevance} /> },
+    { label: 'Пояснюваність', node: <ScoreDots value={score.explainability} /> },
+    { label: "Прив’язка до бази", node: <ScoreDots value={score.db_binding} /> },
+    {
+      label: 'Ризик вигаданих книг',
+      node: (
+        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${riskColors[score.hallucination_risk]}`}>
+          {score.hallucination_risk}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl">
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+        Оцінка відповіді
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {rows.map(({ label, node }) => (
+          <div key={label} className="flex items-center justify-between gap-4">
+            <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{label}</span>
+            {node}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
   const [query, setQuery] = useState('');
-  const [useRag, setUseRag] = useState(true);
+  const [searchMode, setSearchMode] = useState<SearchMode>('rag');
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<BookRecommendation[]>([]);
-  const [usedRag, setUsedRag] = useState<boolean | null>(null);
+  const [activeMode, setActiveMode] = useState<SearchMode | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [qualityScore, setQualityScore] = useState<QualityScore | null>(null);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
   const { t } = useLanguage();
@@ -56,13 +133,15 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
     setError('');
     setRecommendations([]);
     setNote('');
-    setUsedRag(null);
+    setActiveMode(null);
+    setNotFound(false);
+    setQualityScore(null);
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/recommendations/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, use_rag: useRag }),
+        body: JSON.stringify({ query, search_mode: searchMode }),
       });
 
       if (!response.ok) {
@@ -72,8 +151,10 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
 
       const data: ApiResponse = await response.json();
       setRecommendations(data.recommendations);
-      setUsedRag(data.used_rag);
+      setActiveMode(data.search_mode);
+      setNotFound(data.not_found ?? false);
       if (data.note) setNote(data.note);
+      if (data.quality_score) setQualityScore(data.quality_score);
 
       addToSearchHistory(query, data.recommendations.length);
     } catch (err) {
@@ -100,39 +181,53 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
 
   return (
     <div className="w-full">
-      {/* RAG toggle */}
-      <div className="flex items-center justify-between mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center space-x-3">
-          {useRag ? (
-            <Database className="w-5 h-5 text-blue-500" />
-          ) : (
-            <Brain className="w-5 h-5 text-purple-500" />
-          )}
-          <div>
-            <p className="font-semibold text-gray-900 dark:text-white text-sm">
-              {useRag ? 'RAG — пошук по базі даних' : 'GPT — без бази даних'}
-            </p>
-            <p className="text-gray-500 dark:text-gray-400 text-xs">
-              {useRag
-                ? 'Семантичний пошук у власній БД + GPT для пояснень'
-                : 'GPT відповідає лише зі своїх знань (до жовтня 2023)'}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setUseRag(!useRag)}
-          className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
-            useRag ? 'bg-blue-500' : 'bg-purple-500'
-          }`}
-        >
-          <span
-            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-              useRag ? 'translate-x-7' : 'translate-x-1'
+      {/* Mode selector */}
+      <div className="mb-4 p-1.5 bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 flex gap-1">
+        {([
+          {
+            mode: 'keyword' as SearchMode,
+            icon: <Search className="w-4 h-4" />,
+            label: 'Keyword',
+            desc: 'Пошук за ключовими словами',
+            active: 'bg-green-500 text-white shadow',
+            inactive: 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+          },
+          {
+            mode: 'gpt' as SearchMode,
+            icon: <Brain className="w-4 h-4" />,
+            label: 'GPT',
+            desc: 'GPT без бази даних',
+            active: 'bg-purple-500 text-white shadow',
+            inactive: 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+          },
+          {
+            mode: 'rag' as SearchMode,
+            icon: <Database className="w-4 h-4" />,
+            label: 'RAG',
+            desc: 'Семантичний пошук + GPT',
+            active: 'bg-blue-500 text-white shadow',
+            inactive: 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+          },
+        ] as const).map(({ mode, icon, label, desc, active, inactive }) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setSearchMode(mode)}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-medium transition-all ${
+              searchMode === mode ? active : inactive
             }`}
-          />
-        </button>
+          >
+            {icon}
+            <span className="hidden sm:inline">{label}</span>
+            <span className="sm:hidden">{label}</span>
+          </button>
+        ))}
       </div>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 px-1">
+        {searchMode === 'keyword' && 'Пошук лише за ключовими словами — не розуміє змісту запиту'}
+        {searchMode === 'gpt'     && 'GPT відповідає зі своїх знань — може вигадувати книги'}
+        {searchMode === 'rag'     && 'Семантичний пошук у власній БД + GPT для пояснень'}
+      </p>
 
       {/* Search input */}
       <form onSubmit={handleSubmit} className="mb-8">
@@ -166,21 +261,19 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
       </form>
 
       {/* Mode badge after search */}
-      {usedRag !== null && (
+      {activeMode && (
         <div className={`flex items-center space-x-2 mb-4 px-4 py-2 rounded-full w-fit text-sm font-medium ${
-          usedRag
-            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
-            : 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200'
+          activeMode === 'rag'     ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200' :
+          activeMode === 'gpt'    ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200' :
+                                    'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200'
         }`}>
-          {usedRag ? (
-            <><Database className="w-4 h-4" /><span>Результати з бази даних (RAG)</span></>
-          ) : (
-            <><Brain className="w-4 h-4" /><span>Результати від GPT (без RAG)</span></>
-          )}
+          {activeMode === 'rag'  && <><Database className="w-4 h-4" /><span>RAG — результати з бази даних</span></>}
+          {activeMode === 'gpt'  && <><Brain className="w-4 h-4" /><span>GPT — без прив&apos;язки до бази</span></>}
+          {activeMode === 'keyword' && <><Search className="w-4 h-4" /><span>Keyword — текстовий пошук у базі</span></>}
         </div>
       )}
 
-      {note && (
+      {note && !notFound && (
         <div className="bg-blue-50 dark:bg-blue-900/50 mb-6 p-4 border border-blue-200 dark:border-blue-800 rounded-lg">
           <div className="flex items-start space-x-2">
             <Info className="flex-shrink-0 mt-0.5 w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -202,6 +295,27 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
           <h3 className="mb-6 font-bold text-gray-900 dark:text-white text-2xl">
             Рекомендації для вас:
           </h3>
+          {activeMode === 'rag' && (
+            <div className="flex items-center space-x-2 mb-4 px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 w-fit text-sm text-green-800 dark:text-green-200">
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
+              <span>Всі рекомендації сформовані на основі локальної бази даних</span>
+            </div>
+          )}
+          {activeMode === 'keyword' && (
+            <div className="flex items-center space-x-2 mb-4 px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 w-fit text-sm text-green-800 dark:text-green-200">
+              <Search className="w-4 h-4 flex-shrink-0" />
+              <span>Текстовий пошук у локальній базі — без AI, тільки збіг слів</span>
+            </div>
+          )}
+          {activeMode === 'gpt' && (
+            <div className="flex items-center space-x-2 mb-4 px-4 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 w-fit text-sm text-amber-800 dark:text-amber-200">
+              <Brain className="w-4 h-4 flex-shrink-0" />
+              <span>GPT рекомендує зі своїх знань — перевіряємо наявність в локальній базі</span>
+            </div>
+          )}
+
+          {qualityScore && <QualityScoreCard score={qualityScore} />}
+
           <div className="gap-6 grid">
             {recommendations.map((book, index) => (
               <div
@@ -218,9 +332,24 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
                   <div className="flex-1">
                     <div className="flex sm:flex-row flex-col sm:justify-between sm:items-start mb-3">
                       <div>
-                        <h4 className="mb-1 font-bold text-gray-900 dark:text-white text-xl">
-                          {book.title}
-                        </h4>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h4 className="font-bold text-gray-900 dark:text-white text-xl">
+                            {book.title}
+                          </h4>
+                          {activeMode === 'gpt' && (
+                            book.in_local_db ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700">
+                                <CheckCircle className="w-3 h-3" />
+                                є в локальній базі
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700">
+                                <XCircle className="w-3 h-3" />
+                                немає в локальній базі
+                              </span>
+                            )
+                          )}
+                        </div>
                         <div className="flex items-center mb-2 text-gray-600 dark:text-gray-400">
                           <User className="mr-1 w-4 h-4" />
                           <span>{book.author}</span>
@@ -275,7 +404,32 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
         </div>
       )}
 
-      {!isLoading && recommendations.length === 0 && !error && (
+      {!isLoading && notFound && recommendations.length === 0 && (
+        <div className="mt-6 p-6 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-2xl">
+          <div className="flex items-start gap-3 mb-4">
+            <SearchX className="w-6 h-6 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-orange-800 dark:text-orange-200 mb-1">
+                {activeMode === 'keyword'
+                  ? 'Нічого не знайдено за ключовими словами'
+                  : 'У локальній базі не знайдено релевантних книг'}
+              </p>
+              <p className="text-orange-700 dark:text-orange-300 text-sm">{note}</p>
+            </div>
+          </div>
+          {activeMode !== 'gpt' && (
+            <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 border-t border-orange-200 dark:border-orange-700 pt-3 mt-1">
+              <Brain className="w-4 h-4 flex-shrink-0" />
+              <span>
+                Для порівняння: GPT-режим може щось порадити навіть на цей запит — але без гарантій точності.
+              </span>
+            </div>
+          )}
+          {qualityScore && <QualityScoreCard score={qualityScore} />}
+        </div>
+      )}
+
+      {!isLoading && recommendations.length === 0 && !error && !notFound && (
         <div className="bg-gray-50 dark:bg-gray-800 mt-12 p-8 rounded-2xl">
           <h4 className="mb-4 font-semibold text-gray-900 dark:text-white text-lg">
             Приклади запитів:

@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BookOpen, User, LogOut, Sun, Moon, Globe, Menu, X, Home } from 'lucide-react';
+import { BookOpen, User, LogOut, Sun, Moon, Globe, Menu, X, Home, BarChart2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useLanguage, Language } from '@/context/LanguageContext';
 
 interface NavigationProps {
-  currentPage: 'home' | 'profile';
-  onPageChange: (page: 'home' | 'profile') => void;
+  currentPage: 'home' | 'profile' | 'comparison';
+  onPageChange: (page: 'home' | 'profile' | 'comparison') => void;
   onAuthClick: () => void;
 }
 
@@ -29,7 +29,7 @@ export default function Navigation({ currentPage, onPageChange, onAuthClick }: N
     setIsMobileMenuOpen(false);
   };
 
-  const handlePageChange = (page: 'home' | 'profile') => {
+  const handlePageChange = (page: 'home' | 'profile' | 'comparison') => {
     onPageChange(page);
     setIsMobileMenuOpen(false);
   };
@@ -62,6 +62,18 @@ export default function Navigation({ currentPage, onPageChange, onAuthClick }: N
               >
                 <Home className="w-4 h-4" />
                 <span>{t('nav.home')}</span>
+              </button>
+
+              <button
+                onClick={() => handlePageChange('comparison')}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                  currentPage === 'comparison'
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <BarChart2 className="w-4 h-4" />
+                <span>RAG vs GPT</span>
               </button>
 
               {isAuthenticated && (
@@ -181,6 +193,18 @@ export default function Navigation({ currentPage, onPageChange, onAuthClick }: N
             >
               <Home className="w-4 h-4" />
               <span>{t('nav.home')}</span>
+            </button>
+
+            <button
+              onClick={() => handlePageChange('comparison')}
+              className={`flex items-center space-x-2 w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                currentPage === 'comparison'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <BarChart2 className="w-4 h-4" />
+              <span>RAG vs GPT</span>
             </button>
 
             {isAuthenticated && (
