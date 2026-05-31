@@ -3,23 +3,23 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const inter = Inter({ subsets: ["latin", "cyrillic"] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LitRecommend - Інтелектуальна система підбору літератури",
-  description: "Знайдіть ідеальні книги з допомогою штучного інтелекту. Персоналізовані рекомендації літератури на основі ваших уподобань та настрою.",
-  keywords: "книги, рекомендації, література, ChatGPT, штучний інтелект, читання, бібліотека",
+  title: "LitRecommend - Intelligent Literature Recommendation System",
+  description: "Find the perfect books with the help of AI. Personalised literature recommendations based on your preferences and mood.",
+  keywords: "books, recommendations, literature, ChatGPT, artificial intelligence, reading, library",
   authors: [{ name: "LitRecommend Team" }],
   openGraph: {
-    title: "LitRecommend - Інтелектуальна система підбору літератури",
-    description: "Знайдіть ідеальні книги з допомогою штучного інтелекту",
+    title: "LitRecommend - Intelligent Literature Recommendation System",
+    description: "Find the perfect books with the help of AI",
     type: "website",
-    locale: "uk_UA",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "LitRecommend - Інтелектуальна система підбору літератури",
-    description: "Знайдіть ідеальні книги з допомогою штучного інтелекту",
+    title: "LitRecommend - Intelligent Literature Recommendation System",
+    description: "Find the perfect books with the help of AI",
   },
   robots: {
     index: true,
@@ -79,7 +79,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="uk" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

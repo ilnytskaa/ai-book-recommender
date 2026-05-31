@@ -11,12 +11,12 @@ interface RegisterFormProps {
 }
 
 const countries = [
-  'Україна', 'США', 'Великобританія', 'Німеччина', 'Франція', 'Італія', 'Іспанія',
-  'Канада', 'Австралія', 'Польща', 'Чехія', 'Словаччина', 'Інше'
+  'Ukraine', 'USA', 'United Kingdom', 'Germany', 'France', 'Italy', 'Spain',
+  'Canada', 'Australia', 'Poland', 'Czech Republic', 'Slovakia', 'Other'
 ];
 
 const availableLanguages = [
-  'Українська', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Polski'
+  'Ukrainian', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Polski'
 ];
 
 export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
@@ -43,13 +43,13 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Паролі не співпадають');
+      setError('Passwords do not match');
       setIsLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Пароль повинен містити не менше 6 символів');
+      setError('Password must be at least 6 characters');
       setIsLoading(false);
       return;
     }
@@ -96,7 +96,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
           {t('title.register')}
         </h2>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Створіть свій акаунт для персоналізованих рекомендацій
+          Create your account for personalised recommendations
         </p>
       </div>
 
@@ -120,7 +120,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
                 value={formData.firstName}
                 onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                 className="dark:bg-gray-700 py-3 pr-4 pl-10 border border-gray-300 dark:border-gray-600 focus:border-transparent rounded-lg focus:ring-2 focus:ring-green-500 w-full dark:text-white"
-                placeholder="Іван"
+                placeholder="John"
               />
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
                 value={formData.lastName}
                 onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
                 className="dark:bg-gray-700 py-3 pr-4 pl-10 border border-gray-300 dark:border-gray-600 focus:border-transparent rounded-lg focus:ring-2 focus:ring-green-500 w-full dark:text-white"
-                placeholder="Петренко"
+                placeholder="Doe"
               />
             </div>
           </div>
@@ -204,7 +204,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
 
           <div>
             <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300 text-sm">
-              Підтвердження паролю
+              Confirm Password
             </label>
             <div className="relative">
               <Lock className="top-1/2 left-3 absolute w-5 h-5 text-gray-400 -translate-y-1/2 transform" />
@@ -232,7 +232,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
               onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
               className="dark:bg-gray-700 py-3 pr-4 pl-10 border border-gray-300 dark:border-gray-600 focus:border-transparent rounded-lg focus:ring-2 focus:ring-green-500 w-full dark:text-white"
             >
-              <option value="">Оберіть країну</option>
+              <option value="">Select country</option>
               {countries.map(country => (
                 <option key={country} value={country}>{country}</option>
               ))}
@@ -278,7 +278,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
 
       <div className="mt-8 text-center">
         <p className="text-gray-600 dark:text-gray-400">
-          Вже маєте акаунт?{' '}
+          Already have an account?{' '}
           <button
             onClick={onSwitchToLogin}
             className="font-medium text-green-600 hover:text-green-700 dark:hover:text-green-300 dark:text-green-400"
@@ -289,4 +289,4 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
       </div>
     </div>
   );
-} 
+}

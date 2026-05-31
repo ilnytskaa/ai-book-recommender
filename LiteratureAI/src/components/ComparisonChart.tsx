@@ -23,10 +23,10 @@ interface Metric {
 }
 
 const METRICS: Metric[] = [
-  { key: 'db_binding',      label: "Прив'язка до бази" },
-  { key: 'controllability', label: 'Контрольованість'  },
-  { key: 'relevance',       label: 'Релевантність'     },
-  { key: 'explainability',  label: 'Пояснюваність'     },
+  { key: 'db_binding',      label: 'DB Binding'      },
+  { key: 'controllability', label: 'Controllability' },
+  { key: 'relevance',       label: 'Relevance'       },
+  { key: 'explainability',  label: 'Explainability'  },
 ];
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -56,8 +56,8 @@ function NoDataHint() {
   return (
     <div className="text-center py-12 text-gray-400 dark:text-gray-500">
       <BarChart2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
-      <p className="text-sm">Дані з'являться після перших запитів.</p>
-      <p className="text-xs mt-1">Зробіть кілька пошуків у режимі RAG і GPT.</p>
+      <p className="text-sm">Data will appear after the first queries.</p>
+      <p className="text-xs mt-1">Make a few searches in RAG and GPT mode.</p>
     </div>
   );
 }
@@ -72,10 +72,10 @@ export default function ComparisonChart() {
     setError('');
     try {
       const res = await fetch(`${BACKEND_URL}/api/recommendations/stats/`);
-      if (!res.ok) throw new Error('Помилка завантаження');
+      if (!res.ok) throw new Error('Failed to load');
       setStats(await res.json());
     } catch {
-      setError('Не вдалося завантажити статистику');
+      setError('Failed to load statistics');
     } finally {
       setLoading(false);
     }
@@ -92,10 +92,10 @@ export default function ComparisonChart() {
           <BarChart2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           <div>
             <h2 className="font-bold text-gray-900 dark:text-white text-xl">
-              RAG vs GPT — порівняння
+              RAG vs GPT — comparison
             </h2>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Середні показники якості за всіма запитами
+              Average quality scores across all queries
             </p>
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function ComparisonChart() {
           onClick={fetchStats}
           disabled={loading}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors disabled:opacity-40"
-          title="Оновити"
+          title="Refresh"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -130,17 +130,17 @@ export default function ComparisonChart() {
             <span className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
               <Search className="w-3.5 h-3.5 text-green-500" />
               Keyword
-              <span className="text-gray-400">({stats!.keyword.count} запитів)</span>
+              <span className="text-gray-400">({stats!.keyword.count} queries)</span>
             </span>
             <span className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
               <Brain className="w-3.5 h-3.5 text-purple-500" />
               GPT-only
-              <span className="text-gray-400">({stats!.gpt.count} запитів)</span>
+              <span className="text-gray-400">({stats!.gpt.count} queries)</span>
             </span>
             <span className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
               <Database className="w-3.5 h-3.5 text-blue-500" />
               RAG
-              <span className="text-gray-400">({stats!.rag.count} запитів)</span>
+              <span className="text-gray-400">({stats!.rag.count} queries)</span>
             </span>
           </div>
 
@@ -174,7 +174,7 @@ export default function ComparisonChart() {
           </div>
 
           <p className="mt-5 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-700 pt-3">
-            Шкала: 1–5 балів → 20–100%. Чим більше запитів — тим точніша статистика.
+            Scale: 1–5 points → 20–100%. More queries = more accurate statistics.
           </p>
         </>
       )}

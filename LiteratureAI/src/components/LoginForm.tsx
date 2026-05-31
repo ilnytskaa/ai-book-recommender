@@ -51,7 +51,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
           {t('title.login')}
         </h2>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Ласкаво просимо назад!
+          Welcome back!
         </p>
       </div>
 
@@ -121,7 +121,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
 
       <div className="mt-8 text-center">
         <p className="text-gray-600 dark:text-gray-400">
-          Немає акаунту?{' '}
+          Don't have an account?{' '}
           <button
             onClick={onSwitchToRegister}
             className="font-medium text-blue-600 hover:text-blue-700 dark:hover:text-blue-300 dark:text-blue-400"

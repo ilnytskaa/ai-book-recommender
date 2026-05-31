@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BookOpen, User, LogOut, Sun, Moon, Globe, Menu, X, Home, BarChart2 } from 'lucide-react';
+import { BookOpen, User, LogOut, Sun, Moon, Menu, X, Home, BarChart2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import { useLanguage, Language } from '@/context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface NavigationProps {
   currentPage: 'home' | 'profile' | 'comparison';
@@ -15,17 +15,12 @@ interface NavigationProps {
 export default function Navigation({ currentPage, onPageChange, onAuthClick }: NavigationProps) {
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     onPageChange('home');
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleLanguageChange = (newLanguage: Language) => {
-    setLanguage(newLanguage);
     setIsMobileMenuOpen(false);
   };
 
@@ -92,27 +87,6 @@ export default function Navigation({ currentPage, onPageChange, onAuthClick }: N
             </div>
 
             <div className="flex items-center space-x-3">
-              <div className="group relative">
-                <button className="flex items-center space-x-1 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
-                  <Globe className="w-4 h-4" />
-                  <span className="text-sm">{language.toUpperCase()}</span>
-                </button>
-                <div className="invisible group-hover:visible top-full right-0 z-50 absolute bg-white dark:bg-gray-800 opacity-0 group-hover:opacity-100 shadow-lg mt-1 border border-gray-200 dark:border-gray-700 rounded-lg transition-all duration-200">
-                  <button
-                    onClick={() => handleLanguageChange('uk')}
-                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 first:rounded-t-lg w-full text-gray-700 dark:text-gray-300 text-sm text-left"
-                  >
-                    {t('language.uk')}
-                  </button>
-                  <button
-                    onClick={() => handleLanguageChange('en')}
-                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 last:rounded-b-lg w-full text-gray-700 dark:text-gray-300 text-sm text-left"
-                  >
-                    {t('language.en')}
-                  </button>
-                </div>
-              </div>
-
               <button
                 onClick={toggleTheme}
                 className="hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded-lg text-gray-700 dark:text-gray-300 transition-colors"
@@ -222,34 +196,6 @@ export default function Navigation({ currentPage, onPageChange, onAuthClick }: N
             )}
 
             <div className="mt-2 pt-2 border-gray-200 dark:border-gray-700 border-t">
-              <div className="px-3 py-2">
-                <p className="font-medium text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">
-                  {t('form.languages')}
-                </p>
-                <div className="space-y-1 mt-2">
-                  <button
-                    onClick={() => handleLanguageChange('uk')}
-                    className={`block w-full text-left px-2 py-1 text-sm rounded ${
-                      language === 'uk'
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {t('language.uk')}
-                  </button>
-                  <button
-                    onClick={() => handleLanguageChange('en')}
-                    className={`block w-full text-left px-2 py-1 text-sm rounded ${
-                      language === 'en'
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {t('language.en')}
-                  </button>
-                </div>
-              </div>
-
               <button
                 onClick={toggleTheme}
                 className="flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-2 rounded-lg w-full text-gray-700 dark:text-gray-300 text-left transition-colors"

@@ -24,14 +24,14 @@ const defaultPreferences: UserPreferences = {
 };
 
 const genres = [
-  'Фентезі', 'Романтика', 'Детектив', 'Наукова фантастика', 'Трилер',
-  'Історичний роман', 'Біографія', 'Філософія', 'Саморозвиток', 'Українська література',
-  'Класична література', 'Сучасна проза', 'Поезія', 'Драма', 'Комедія'
+  'Fantasy', 'Romance', 'Mystery', 'Science Fiction', 'Thriller',
+  'Historical Fiction', 'Biography', 'Philosophy', 'Self-Development', 'Ukrainian Literature',
+  'Classic Literature', 'Contemporary Fiction', 'Poetry', 'Drama', 'Comedy'
 ];
 
 const moods = [
-  'Веселий', 'Романтичний', 'Пригодницький', 'Філософський', 'Напружений',
-  'Спокійний', 'Мотивуючий', 'Меланхолійний', 'Загадковий', 'Натхненний'
+  'Cheerful', 'Romantic', 'Adventurous', 'Philosophical', 'Tense',
+  'Calm', 'Motivating', 'Melancholic', 'Mysterious', 'Inspiring'
 ];
 
 export default function UserPreferences() {
@@ -75,13 +75,13 @@ export default function UserPreferences() {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
           <Settings className="w-5 h-5 text-blue-600" />
-          <h3 className="font-bold text-gray-900 text-lg">Персоналізація</h3>
+          <h3 className="font-bold text-gray-900 text-lg">Personalisation</h3>
         </div>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="text-blue-600 hover:text-blue-800 transition-colors"
         >
-          {isExpanded ? 'Згорнути' : 'Налаштувати'}
+          {isExpanded ? 'Collapse' : 'Customise'}
         </button>
       </div>
 
@@ -92,7 +92,7 @@ export default function UserPreferences() {
           </span>
         ))}
         {preferences.favoriteGenres.length > 3 && (
-          <span className="text-gray-500 text-sm">+{preferences.favoriteGenres.length - 3} більше</span>
+          <span className="text-gray-500 text-sm">+{preferences.favoriteGenres.length - 3} more</span>
         )}
       </div>
 
@@ -101,7 +101,7 @@ export default function UserPreferences() {
           <div>
             <label className="flex items-center space-x-2 mb-3 font-medium text-gray-900">
               <Heart className="w-4 h-4 text-red-500" />
-              <span>Улюблені жанри</span>
+              <span>Favourite genres</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {genres.map(genre => (
@@ -123,7 +123,7 @@ export default function UserPreferences() {
           <div>
             <label className="flex items-center space-x-2 mb-3 font-medium text-gray-900">
               <BookOpen className="w-4 h-4 text-green-500" />
-              <span>Ціль читання (книг на рік)</span>
+              <span>Reading goal (books per year)</span>
             </label>
             <input
               type="range"
@@ -138,7 +138,7 @@ export default function UserPreferences() {
             />
             <div className="flex justify-between text-gray-600 text-sm">
               <span>1</span>
-              <span className="font-medium">{preferences.readingGoal} книг</span>
+              <span className="font-medium">{preferences.readingGoal} books</span>
               <span>100</span>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function UserPreferences() {
           <div>
             <label className="flex items-center space-x-2 mb-3 font-medium text-gray-900">
               <Filter className="w-4 h-4 text-purple-500" />
-              <span>Улюблені настрої</span>
+              <span>Favourite moods</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {moods.map(mood => (
@@ -166,7 +166,7 @@ export default function UserPreferences() {
           </div>
 
           <div>
-            <label className="block mb-3 font-medium text-gray-900">Бажана довжина книг</label>
+            <label className="block mb-3 font-medium text-gray-900">Preferred book length</label>
             <select
               value={preferences.bookLength}
               onChange={(e) => setPreferences(prev => ({
@@ -175,15 +175,15 @@ export default function UserPreferences() {
               }))}
               className="p-2 border border-gray-300 rounded-lg w-full"
             >
-              <option value="any">Будь-яка</option>
-              <option value="short">Короткі (до 200 сторінок)</option>
-              <option value="medium">Середні (200-400 сторінок)</option>
-              <option value="long">Довгі (400+ сторінок)</option>
+              <option value="any">Any</option>
+              <option value="short">Short (up to 200 pages)</option>
+              <option value="medium">Medium (200–400 pages)</option>
+              <option value="long">Long (400+ pages)</option>
             </select>
           </div>
 
           <div>
-            <label className="block mb-3 font-medium text-gray-900">Вікові обмеження</label>
+            <label className="block mb-3 font-medium text-gray-900">Age rating</label>
             <select
               value={preferences.ageRating}
               onChange={(e) => setPreferences(prev => ({
@@ -192,25 +192,25 @@ export default function UserPreferences() {
               }))}
               className="p-2 border border-gray-300 rounded-lg w-full"
             >
-              <option value="all">Без обмежень</option>
-              <option value="teen">Для підлітків (13+)</option>
-              <option value="adult">Для дорослих (18+)</option>
+              <option value="all">No restrictions</option>
+              <option value="teen">Teens (13+)</option>
+              <option value="adult">Adults (18+)</option>
             </select>
           </div>
 
           <button
             onClick={savePreferences}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all ${
-              isSaved 
-                ? 'bg-green-600 text-white' 
+              isSaved
+                ? 'bg-green-600 text-white'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
           >
             <Save className="w-4 h-4" />
-            <span>{isSaved ? 'Збережено!' : 'Зберегти налаштування'}</span>
+            <span>{isSaved ? 'Saved!' : 'Save settings'}</span>
           </button>
         </div>
       )}
     </div>
   );
-} 
+}

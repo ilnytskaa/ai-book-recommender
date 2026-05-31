@@ -25,7 +25,7 @@ interface QualityScore {
   relevance: number;
   explainability: number;
   db_binding: number;
-  hallucination_risk: 'відсутній' | 'низький' | 'середній' | 'високий';
+  hallucination_risk: 'none' | 'low' | 'medium' | 'high';
 }
 
 interface ApiResponse {
@@ -43,64 +43,61 @@ interface SearchFormProps {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
-function ScoreDots({ value }: { value: number }) {
+function ScoreBar({ value }: { value: number }) {
+  const pct = Math.round((value / 5) * 100);
+  const color =
+    value >= 4 ? 'bg-green-500' : value >= 3 ? 'bg-yellow-400' : 'bg-red-400';
   return (
-    <span className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }, (_, i) => (
-        <span
-          key={i}
-          className={`inline-block w-3 h-3 rounded-full ${
-            i < value
-              ? value >= 4
-                ? 'bg-green-500'
-                : value >= 3
-                  ? 'bg-yellow-400'
-                  : 'bg-red-400'
-              : 'bg-gray-200 dark:bg-gray-600'
-          }`}
+    <div className="flex items-center gap-3 flex-1">
+      <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${color}`}
+          style={{ width: `${pct}%` }}
         />
-      ))}
-      <span className="ml-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+      </div>
+      <span className="w-8 text-right text-sm font-semibold text-gray-700 dark:text-gray-200 tabular-nums">
         {value}/5
       </span>
-    </span>
+    </div>
   );
 }
 
 function QualityScoreCard({ score }: { score: QualityScore }) {
-  const riskColors: Record<string, string> = {
-    відсутній: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700',
-    низький:   'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700',
-    середній:  'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700',
-    високий:   'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700',
+  const riskStyle: Record<string, string> = {
+    none:   'text-green-600 dark:text-green-400',
+    low:    'text-green-600 dark:text-green-400',
+    medium: 'text-yellow-600 dark:text-yellow-400',
+    high:   'text-red-500 dark:text-red-400',
   };
 
-  const rows: { label: string; node: React.ReactNode }[] = [
-    { label: 'Релевантність', node: <ScoreDots value={score.relevance} /> },
-    { label: 'Пояснюваність', node: <ScoreDots value={score.explainability} /> },
-    { label: "Прив’язка до бази", node: <ScoreDots value={score.db_binding} /> },
-    {
-      label: 'Ризик вигаданих книг',
-      node: (
-        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${riskColors[score.hallucination_risk]}`}>
-          {score.hallucination_risk}
-        </span>
-      ),
-    },
+  const scoreRows = [
+    { label: 'Relevance',    value: score.relevance },
+    { label: 'Explainability', value: score.explainability },
+    { label: 'DB Binding',   value: score.db_binding },
   ];
 
   return (
     <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl">
-      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-        Оцінка відповіді
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4">
+        Response Quality
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {rows.map(({ label, node }) => (
-          <div key={label} className="flex items-center justify-between gap-4">
-            <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{label}</span>
-            {node}
+      <div className="space-y-3">
+        {scoreRows.map(({ label, value }) => (
+          <div key={label} className="flex items-center gap-3">
+            <span className="w-40 text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
+              {label}
+            </span>
+            <ScoreBar value={value} />
           </div>
         ))}
+        <div className="flex items-center gap-3 pt-1 border-t border-gray-200 dark:border-gray-700 mt-1">
+          <span className="w-40 text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
+            Hallucination Risk
+          </span>
+          <span className={`text-sm font-semibold capitalize ${riskStyle[score.hallucination_risk] ?? 'text-gray-500'}`}>
+            {score.hallucination_risk}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -146,7 +143,7 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData?.error || 'Помилка при отриманні рекомендацій');
+        throw new Error(errData?.error || 'Failed to fetch recommendations');
       }
 
       const data: ApiResponse = await response.json();
@@ -158,7 +155,7 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
 
       addToSearchHistory(query, data.recommendations.length);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Щось пішло не так');
+      setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
@@ -173,9 +170,9 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
         author: book.author,
         rating: book.rating,
       });
-      alert(`"${book.title}" додано до списку бажань та улюблених!`);
+      alert(`"${book.title}" added to wishlist and favourites!`);
     } else {
-      alert(`"${book.title}" вже є в списку бажань.`);
+      alert(`"${book.title}" is already in your wishlist.`);
     }
   };
 
@@ -188,7 +185,7 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
             mode: 'keyword' as SearchMode,
             icon: <Search className="w-4 h-4" />,
             label: 'Keyword',
-            desc: 'Пошук за ключовими словами',
+            desc: 'Search by keywords',
             active: 'bg-green-500 text-white shadow',
             inactive: 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
           },
@@ -196,7 +193,7 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
             mode: 'gpt' as SearchMode,
             icon: <Brain className="w-4 h-4" />,
             label: 'GPT',
-            desc: 'GPT без бази даних',
+            desc: 'GPT without database',
             active: 'bg-purple-500 text-white shadow',
             inactive: 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
           },
@@ -204,7 +201,7 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
             mode: 'rag' as SearchMode,
             icon: <Database className="w-4 h-4" />,
             label: 'RAG',
-            desc: 'Семантичний пошук + GPT',
+            desc: 'Semantic search + GPT',
             active: 'bg-blue-500 text-white shadow',
             inactive: 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
           },
@@ -224,9 +221,9 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
         ))}
       </div>
       <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 px-1">
-        {searchMode === 'keyword' && 'Пошук лише за ключовими словами — не розуміє змісту запиту'}
-        {searchMode === 'gpt'     && 'GPT відповідає зі своїх знань — може вигадувати книги'}
-        {searchMode === 'rag'     && 'Семантичний пошук у власній БД + GPT для пояснень'}
+        {searchMode === 'keyword' && 'Keyword-only search — does not understand query meaning'}
+        {searchMode === 'gpt'     && 'GPT answers from its knowledge — may hallucinate books'}
+        {searchMode === 'rag'     && 'Semantic search in local DB + GPT for explanations'}
       </p>
 
       {/* Search input */}
@@ -267,9 +264,9 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
           activeMode === 'gpt'    ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200' :
                                     'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200'
         }`}>
-          {activeMode === 'rag'  && <><Database className="w-4 h-4" /><span>RAG — результати з бази даних</span></>}
-          {activeMode === 'gpt'  && <><Brain className="w-4 h-4" /><span>GPT — без прив&apos;язки до бази</span></>}
-          {activeMode === 'keyword' && <><Search className="w-4 h-4" /><span>Keyword — текстовий пошук у базі</span></>}
+          {activeMode === 'rag'     && <><Database className="w-4 h-4" /><span>RAG — results from local database</span></>}
+          {activeMode === 'gpt'     && <><Brain className="w-4 h-4" /><span>GPT — no database binding</span></>}
+          {activeMode === 'keyword' && <><Search className="w-4 h-4" /><span>Keyword — text search in database</span></>}
         </div>
       )}
 
@@ -293,24 +290,24 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
       {recommendations.length > 0 && (
         <div className="space-y-6">
           <h3 className="mb-6 font-bold text-gray-900 dark:text-white text-2xl">
-            Рекомендації для вас:
+            Recommendations for you:
           </h3>
           {activeMode === 'rag' && (
             <div className="flex items-center space-x-2 mb-4 px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 w-fit text-sm text-green-800 dark:text-green-200">
               <CheckCircle className="w-4 h-4 flex-shrink-0" />
-              <span>Всі рекомендації сформовані на основі локальної бази даних</span>
+              <span>All recommendations are sourced from the local database</span>
             </div>
           )}
           {activeMode === 'keyword' && (
             <div className="flex items-center space-x-2 mb-4 px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 w-fit text-sm text-green-800 dark:text-green-200">
               <Search className="w-4 h-4 flex-shrink-0" />
-              <span>Текстовий пошук у локальній базі — без AI, тільки збіг слів</span>
+              <span>Text search in local database — no AI, exact word matching only</span>
             </div>
           )}
           {activeMode === 'gpt' && (
             <div className="flex items-center space-x-2 mb-4 px-4 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 w-fit text-sm text-amber-800 dark:text-amber-200">
               <Brain className="w-4 h-4 flex-shrink-0" />
-              <span>GPT рекомендує зі своїх знань — перевіряємо наявність в локальній базі</span>
+              <span>GPT recommends from its knowledge — checking presence in local database</span>
             </div>
           )}
 
@@ -340,12 +337,12 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
                             book.in_local_db ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700">
                                 <CheckCircle className="w-3 h-3" />
-                                є в локальній базі
+                                in local DB
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700">
                                 <XCircle className="w-3 h-3" />
-                                немає в локальній базі
+                                not in local DB
                               </span>
                             )
                           )}
@@ -373,10 +370,10 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
                         <button
                           onClick={() => handleAddToWishlist(book)}
                           className="flex items-center space-x-1 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 px-3 py-1 rounded-full text-red-600 dark:text-red-400 transition-colors"
-                          title="Додати до списку бажань"
+                          title="Add to wishlist"
                         >
                           <Heart className="w-4 h-4" />
-                          <span className="text-sm">До бажань</span>
+                          <span className="text-sm">Wishlist</span>
                         </button>
                       </div>
                     </div>
@@ -393,7 +390,7 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
 
                     <div className="bg-blue-50 dark:bg-blue-900/30 p-4 border-blue-400 border-l-4 rounded-r-lg">
                       <p className="text-blue-800 dark:text-blue-200">
-                        <strong>Чому ця книга для вас:</strong> {book.reason}
+                        <strong>Why this book:</strong> {book.reason}
                       </p>
                     </div>
                   </div>
@@ -411,8 +408,8 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
             <div>
               <p className="font-semibold text-orange-800 dark:text-orange-200 mb-1">
                 {activeMode === 'keyword'
-                  ? 'Нічого не знайдено за ключовими словами'
-                  : 'У локальній базі не знайдено релевантних книг'}
+                  ? 'No results found for those keywords'
+                  : 'No relevant books found in the local database'}
               </p>
               <p className="text-orange-700 dark:text-orange-300 text-sm">{note}</p>
             </div>
@@ -421,7 +418,7 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
             <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 border-t border-orange-200 dark:border-orange-700 pt-3 mt-1">
               <Brain className="w-4 h-4 flex-shrink-0" />
               <span>
-                Для порівняння: GPT-режим може щось порадити навіть на цей запит — але без гарантій точності.
+                For comparison: GPT mode may suggest something for this query — but without accuracy guarantees.
               </span>
             </div>
           )}
@@ -432,14 +429,14 @@ export default function SearchForm({ initialQuery = '' }: SearchFormProps) {
       {!isLoading && recommendations.length === 0 && !error && !notFound && (
         <div className="bg-gray-50 dark:bg-gray-800 mt-12 p-8 rounded-2xl">
           <h4 className="mb-4 font-semibold text-gray-900 dark:text-white text-lg">
-            Приклади запитів:
+            Example queries:
           </h4>
           <div className="gap-4 grid md:grid-cols-2">
             {[
-              { label: 'Романтика + Подорожі', text: 'Хочу щось романтичне про подорожі в Європі' },
-              { label: 'Сучасний детектив', text: 'Детектив з неочікуваним фіналом, щось сучасне' },
-              { label: 'Sci-Fi про ШІ', text: 'Наукова фантастика про штучний інтелект' },
-              { label: 'Книги 2024 року', text: 'Найкращі книги 2024 року' },
+              { label: 'Romance + Travel', text: 'Something romantic about travelling in Europe' },
+              { label: 'Modern Mystery', text: 'A mystery with an unexpected ending, something modern' },
+              { label: 'Sci-Fi about AI', text: 'Science fiction about artificial intelligence' },
+              { label: 'Best books of 2024', text: 'Best books of 2024' },
             ].map(({ label, text }) => (
               <button
                 key={label}

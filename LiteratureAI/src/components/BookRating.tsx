@@ -19,10 +19,10 @@ interface BookRatingProps {
   totalReviews?: number;
 }
 
-export default function BookRating({ 
-  bookTitle, 
-  currentRating = 0, 
-  totalReviews = 0 
+export default function BookRating({
+  bookTitle,
+  currentRating = 0,
+  totalReviews = 0
 }: BookRatingProps) {
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -32,18 +32,18 @@ export default function BookRating({
     {
       id: '1',
       userId: 'user1',
-      userName: 'Марія К.',
+      userName: 'Maria K.',
       rating: 5,
-      comment: 'Чудова книга! Не могла відірватися від читання. Рекомендую всім!',
+      comment: 'Wonderful book! Could not put it down. Highly recommend!',
       date: '2024-05-20',
       helpful: 12
     },
     {
       id: '2',
       userId: 'user2',
-      userName: 'Олексій П.',
+      userName: 'Alex P.',
       rating: 4,
-      comment: 'Дуже цікавий сюжет, але кінцівка трохи розчарувала.',
+      comment: 'Very interesting plot, but the ending was a bit disappointing.',
       date: '2024-05-18',
       helpful: 8
     }
@@ -55,7 +55,7 @@ export default function BookRating({
     const newReview: Review = {
       id: Date.now().toString(),
       userId: 'current-user',
-      userName: 'Ви',
+      userName: 'You',
       rating: userRating,
       comment: review,
       date: new Date().toISOString().split('T')[0],
@@ -69,7 +69,7 @@ export default function BookRating({
   };
 
   const handleHelpful = (reviewId: string) => {
-    setReviews(reviews.map(r => 
+    setReviews(reviews.map(r =>
       r.id === reviewId ? { ...r, helpful: r.helpful + 1 } : r
     ));
   };
@@ -77,9 +77,9 @@ export default function BookRating({
   return (
     <div className="bg-white shadow-lg p-6 border border-gray-100 rounded-2xl">
       <h3 className="mb-4 font-bold text-gray-900 text-xl">
-        Рейтинги та відгуки: {bookTitle}
+        Ratings &amp; Reviews: {bookTitle}
       </h3>
-      
+
       <div className="flex items-center space-x-4 mb-6">
         <div className="flex items-center">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -92,10 +92,10 @@ export default function BookRating({
           ))}
         </div>
         <span className="font-semibold text-gray-900 text-lg">
-          {currentRating.toFixed(1)} з 5
+          {currentRating.toFixed(1)} out of 5
         </span>
         <span className="text-gray-600">
-          ({totalReviews} відгуків)
+          ({totalReviews} reviews)
         </span>
       </div>
 
@@ -104,22 +104,22 @@ export default function BookRating({
           onClick={() => setShowReviewForm(true)}
           className="bg-blue-600 hover:bg-blue-700 mb-6 px-4 py-2 rounded-lg font-medium text-white transition-colors"
         >
-          Написати відгук
+          Write a review
         </button>
       )}
 
       {showReviewForm && (
         <div className="bg-gray-50 mb-6 p-4 border border-gray-200 rounded-lg">
-          <h4 className="mb-3 font-semibold text-gray-900">Ваш відгук</h4>
-          
+          <h4 className="mb-3 font-semibold text-gray-900">Your review</h4>
+
           <div className="flex items-center space-x-1 mb-3">
-            <span className="mr-2 text-gray-700">Ваш рейтинг:</span>
+            <span className="mr-2 text-gray-700">Your rating:</span>
             {[1, 2, 3, 4, 5].map((star) => (
               <Star
                 key={star}
                 className={`w-6 h-6 cursor-pointer transition-colors ${
-                  star <= (hoverRating || userRating) 
-                    ? 'text-yellow-500 fill-current' 
+                  star <= (hoverRating || userRating)
+                    ? 'text-yellow-500 fill-current'
                     : 'text-gray-300 hover:text-yellow-400'
                 }`}
                 onClick={() => setUserRating(star)}
@@ -132,7 +132,7 @@ export default function BookRating({
           <textarea
             value={review}
             onChange={(e) => setReview(e.target.value)}
-            placeholder="Поділіться своїми враженнями про книгу..."
+            placeholder="Share your thoughts about this book..."
             className="mb-3 p-3 border border-gray-300 rounded-lg w-full h-24 resize-none"
           />
 
@@ -142,7 +142,7 @@ export default function BookRating({
               disabled={userRating === 0 || !review.trim()}
               className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2 rounded-lg font-medium text-white transition-colors disabled:cursor-not-allowed"
             >
-              Опублікувати
+              Publish
             </button>
             <button
               onClick={() => {
@@ -152,14 +152,14 @@ export default function BookRating({
               }}
               className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg font-medium text-gray-700 transition-colors"
             >
-              Скасувати
+              Cancel
             </button>
           </div>
         </div>
       )}
 
       <div className="space-y-4">
-        <h4 className="font-semibold text-gray-900">Відгуки читачів</h4>
+        <h4 className="font-semibold text-gray-900">Reader reviews</h4>
         {reviews.map((review) => (
           <div key={review.id} className="bg-gray-50 p-4 border border-gray-200 rounded-lg">
             <div className="flex justify-between items-start mb-2">
@@ -185,11 +185,11 @@ export default function BookRating({
               className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors"
             >
               <ThumbsUp className="w-4 h-4" />
-              <span className="text-sm">Корисно ({review.helpful})</span>
+              <span className="text-sm">Helpful ({review.helpful})</span>
             </button>
           </div>
         ))}
       </div>
     </div>
   );
-} 
+}

@@ -6,18 +6,18 @@ import { useAuth, User as UserType } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
 const countries = [
-  'Україна', 'США', 'Великобританія', 'Німеччина', 'Франція', 'Італія', 'Іспанія',
-  'Канада', 'Австралія', 'Польща', 'Чехія', 'Словаччина', 'Інше'
+  'Ukraine', 'USA', 'United Kingdom', 'Germany', 'France', 'Italy', 'Spain',
+  'Canada', 'Australia', 'Poland', 'Czech Republic', 'Slovakia', 'Other'
 ];
 
 const availableLanguages = [
-  'Українська', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Polski'
+  'Ukrainian', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Polski'
 ];
 
 const genres = [
-  'Романтика', 'Фентезі', 'Наукова фантастика', 'Детектив', 'Трилер', 'Історичний роман',
-  'Сучасна література', 'Класика', 'Біографія', 'Філософія', 'Поезія', 'Драма',
-  'Пригоди', 'Містика', 'Хорор', 'Гумор', 'Мемуари', 'Саморозвиток'
+  'Romance', 'Fantasy', 'Science Fiction', 'Mystery', 'Thriller', 'Historical Fiction',
+  'Contemporary Fiction', 'Classic', 'Biography', 'Philosophy', 'Poetry', 'Drama',
+  'Adventure', 'Mysticism', 'Horror', 'Humour', 'Memoir', 'Self-Development'
 ];
 
 export default function UserProfile() {
@@ -88,9 +88,9 @@ export default function UserProfile() {
             <div className="relative">
               <div className="flex justify-center items-center bg-white/20 backdrop-blur-sm border-4 border-white/30 rounded-full w-24 h-24 overflow-hidden">
                 {editData.avatar ? (
-                  <img 
-                    src={editData.avatar} 
-                    alt="Avatar" 
+                  <img
+                    src={editData.avatar}
+                    alt="Avatar"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -102,7 +102,7 @@ export default function UserProfile() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="bg-blue-600 hover:bg-blue-700 shadow-lg p-2 rounded-full text-white transition-colors"
-                    title="Завантажити фото"
+                    title="Upload photo"
                   >
                     <Upload className="w-4 h-4" />
                   </button>
@@ -110,7 +110,7 @@ export default function UserProfile() {
                     <button
                       onClick={removeAvatar}
                       className="bg-red-600 hover:bg-red-700 shadow-lg p-2 rounded-full text-white transition-colors"
-                      title="Видалити фото"
+                      title="Remove photo"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -134,14 +134,14 @@ export default function UserProfile() {
                       value={editData.firstName || ''}
                       onChange={(e) => setEditData(prev => ({ ...prev, firstName: e.target.value }))}
                       className="bg-white/20 mr-2 px-3 py-1 border border-white/30 rounded-lg text-white placeholder-white/60"
-                      placeholder="Ім'я"
+                      placeholder="First name"
                     />
                     <input
                       type="text"
                       value={editData.lastName || ''}
                       onChange={(e) => setEditData(prev => ({ ...prev, lastName: e.target.value }))}
                       className="bg-white/20 px-3 py-1 border border-white/30 rounded-lg text-white placeholder-white/60"
-                      placeholder="Прізвище"
+                      placeholder="Last name"
                     />
                   </div>
                 ) : (
@@ -155,14 +155,14 @@ export default function UserProfile() {
                     value={editData.nickname || ''}
                     onChange={(e) => setEditData(prev => ({ ...prev, nickname: e.target.value }))}
                     className="inline-block bg-white/20 px-3 py-1 border border-white/30 rounded-lg w-48 text-white placeholder-white/60"
-                    placeholder="Нікнейм"
+                    placeholder="Nickname"
                   />
                 ) : (
                   user.nickname
                 )}
               </p>
               <p className="text-white/70">
-                Користувач з {new Date(user.createdAt).toLocaleDateString('uk-UA')}
+                Member since {new Date(user.createdAt).toLocaleDateString('en-US')}
               </p>
             </div>
           </div>
@@ -221,14 +221,14 @@ export default function UserProfile() {
                   onChange={(e) => setEditData(prev => ({ ...prev, country: e.target.value }))}
                   className="dark:bg-gray-700 p-3 border border-gray-300 dark:border-gray-600 focus:border-transparent rounded-lg focus:ring-2 focus:ring-blue-500 w-full dark:text-white"
                 >
-                  <option value="">Оберіть країну</option>
+                  <option value="">Select country</option>
                   {countries.map(country => (
                     <option key={country} value={country}>{country}</option>
                   ))}
                 </select>
               ) : (
                 <p className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-gray-900 dark:text-white">
-                  {user.country || 'Не вказано'}
+                  {user.country || 'Not specified'}
                 </p>
               )}
             </div>
@@ -262,7 +262,7 @@ export default function UserProfile() {
                 >
                   {language}
                 </span>
-              )) || <span className="text-gray-500 dark:text-gray-400">Не вказано</span>}
+              )) || <span className="text-gray-500 dark:text-gray-400">Not specified</span>}
             </div>
           )}
         </section>
@@ -294,7 +294,7 @@ export default function UserProfile() {
                 >
                   {genre}
                 </span>
-              )) || <span className="text-gray-500 dark:text-gray-400">Не вказано</span>}
+              )) || <span className="text-gray-500 dark:text-gray-400">Not specified</span>}
             </div>
           )}
         </section>
@@ -328,14 +328,14 @@ export default function UserProfile() {
                         </div>
                       )}
                       <p className="mt-2 text-gray-500 dark:text-gray-400 text-xs">
-                        Додано: {new Date(book.dateAdded).toLocaleDateString('uk-UA')}
+                        Added: {new Date(book.dateAdded).toLocaleDateString('en-US')}
                       </p>
                     </div>
                     {isEditing && (
                       <button
                         onClick={() => removeFavoriteBook(book.id)}
                         className="p-1 text-red-500 hover:text-red-700"
-                        title="Видалити з улюблених"
+                        title="Remove from favourites"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -348,10 +348,10 @@ export default function UserProfile() {
             <div className="py-12 text-center">
               <Heart className="mx-auto mb-4 w-16 h-16 text-gray-300 dark:text-gray-600" />
               <p className="text-gray-500 dark:text-gray-400">
-                У вас поки немає улюблених книг
+                You don&apos;t have any favourite books yet
               </p>
               <p className="mt-2 text-gray-400 dark:text-gray-500 text-sm">
-                Додавайте книги в улюблені під час пошуку рекомендацій
+                Add books to favourites while searching for recommendations
               </p>
             </div>
           )}
@@ -359,4 +359,4 @@ export default function UserProfile() {
       </div>
     </div>
   );
-} 
+}

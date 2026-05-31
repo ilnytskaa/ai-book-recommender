@@ -78,8 +78,8 @@ function AppContent() {
               {t('title.main')}
             </h1>
             <p className="mx-auto mb-8 max-w-3xl text-white/90 text-xl md:text-2xl">
-              Знайдіть ідеальні книги за допомогою штучного інтелекту. 
-              Просто опишіть свій настрій або те, що шукаєте!
+              Find the perfect books with the help of AI.
+              Just describe your mood or what you are looking for!
             </p>
             <button
               onClick={scrollToSearch}
@@ -106,7 +106,7 @@ function AppContent() {
                 {t('title.search')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 text-xl">
-                Опишіть, що ви хочете почитати, і ми знайдемо ідеальні варіанти
+                Describe what you want to read and we will find the perfect options
               </p>
             </div>
             <SearchForm />
@@ -118,10 +118,10 @@ function AppContent() {
         <div className="mx-auto px-4 container">
           <div className="mb-16 text-center">
             <h2 className="mb-4 font-bold text-gray-900 dark:text-white text-4xl">
-              Чому обирають BookAI?
+              Why choose BookAI?
             </h2>
             <p className="mx-auto max-w-2xl text-gray-600 dark:text-gray-400 text-xl">
-              Наша система використовує найсучасніші технології для персоналізованих рекомендацій
+              Our system uses state-of-the-art technology for personalised recommendations
             </p>
           </div>
 
@@ -131,10 +131,10 @@ function AppContent() {
                 <Target className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="mb-4 font-bold text-gray-900 dark:text-white text-2xl">
-                Персоналізовані рекомендації
+                Personalised recommendations
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                ШІ аналізує ваші вподобання та знаходить книги, які точно вам сподобаються
+                AI analyses your preferences and finds books you will love
               </p>
             </div>
 
@@ -143,10 +143,10 @@ function AppContent() {
                 <BookMarked className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="mb-4 font-bold text-gray-900 dark:text-white text-2xl">
-                Величезна база книг
+                Vast book database
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Тисячі книг різних жанрів від класики до сучасних бестселерів
+                Thousands of books across all genres from classics to modern bestsellers
               </p>
             </div>
 
@@ -155,10 +155,10 @@ function AppContent() {
                 <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="mb-4 font-bold text-gray-900 dark:text-white text-2xl">
-                Спільнота читачів
+                Reader community
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Діліться відгуками та відкривайте нових авторів разом з іншими
+                Share reviews and discover new authors together with others
               </p>
             </div>
           </div>
@@ -180,10 +180,10 @@ function AppContent() {
       <div className="mx-auto px-4 max-w-3xl container">
         <div className="mb-8 text-center">
           <h1 className="font-bold text-gray-900 dark:text-white text-3xl mb-2">
-            Порівняння RAG vs GPT
+            RAG vs GPT comparison
           </h1>
           <p className="text-gray-500 dark:text-gray-400">
-            Агрегована статистика якості відповідей на основі реальних запитів
+            Aggregated response quality statistics based on real queries
           </p>
         </div>
         <ComparisonChart />

@@ -31,7 +31,7 @@ export default function Wishlist() {
   };
 
   const changePriority = (id: string, priority: 'high' | 'medium' | 'low') => {
-    const updated = wishlist.map(book => 
+    const updated = wishlist.map(book =>
       book.id === id ? { ...book, priority } : book
     );
     setWishlist(updated);
@@ -52,9 +52,9 @@ export default function Wishlist() {
       <div className="bg-white shadow-lg p-6 border border-gray-100 rounded-2xl">
         <div className="flex items-center space-x-2 mb-4">
           <Heart className="w-5 h-5 text-red-500" />
-          <h3 className="font-bold text-gray-900 text-lg">Список бажань</h3>
+          <h3 className="font-bold text-gray-900 text-lg">Wishlist</h3>
         </div>
-        <p className="text-gray-600">Ваш список бажань порожній. Додавайте книги, які хочете прочитати!</p>
+        <p className="text-gray-600">Your wishlist is empty. Add books you want to read!</p>
       </div>
     );
   }
@@ -64,13 +64,13 @@ export default function Wishlist() {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
           <Heart className="w-5 h-5 text-red-500" />
-          <h3 className="font-bold text-gray-900 text-lg">Список бажань ({wishlist.length})</h3>
+          <h3 className="font-bold text-gray-900 text-lg">Wishlist ({wishlist.length})</h3>
         </div>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="text-blue-600 hover:text-blue-800 transition-colors"
         >
-          {isExpanded ? 'Згорнути' : 'Розгорнути'}
+          {isExpanded ? 'Collapse' : 'Expand'}
         </button>
       </div>
 
@@ -101,16 +101,16 @@ export default function Wishlist() {
                     onChange={(e) => changePriority(book.id, e.target.value as 'high' | 'medium' | 'low')}
                     className={`px-2 py-1 rounded text-xs ${getPriorityColor(book.priority)}`}
                   >
-                    <option value="high">Високий</option>
-                    <option value="medium">Середній</option>
-                    <option value="low">Низький</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
                   </select>
                 </div>
               </div>
               <button
                 onClick={() => removeFromWishlist(book.id)}
                 className="p-1 text-red-500 hover:text-red-700 transition-colors"
-                title="Видалити зі списку бажань"
+                title="Remove from wishlist"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -124,7 +124,7 @@ export default function Wishlist() {
           onClick={() => setIsExpanded(true)}
           className="mt-3 w-full text-blue-600 hover:text-blue-800 text-sm text-center transition-colors"
         >
-          Показати всі книги ({wishlist.length})
+          Show all books ({wishlist.length})
         </button>
       )}
     </div>
@@ -144,8 +144,8 @@ export const addToWishlist = (title: string, author: string, genre: string, year
 
   const saved = localStorage.getItem('bookWishlist');
   const currentWishlist = saved ? JSON.parse(saved) : [];
-  
-  const exists = currentWishlist.some((book: WishlistBook) => 
+
+  const exists = currentWishlist.some((book: WishlistBook) =>
     book.title === title && book.author === author
   );
 
@@ -155,4 +155,4 @@ export const addToWishlist = (title: string, author: string, genre: string, year
     return true;
   }
   return false;
-}; 
+};

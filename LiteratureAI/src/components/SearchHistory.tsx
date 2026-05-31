@@ -56,12 +56,12 @@ export default function SearchHistory({ onSelectQuery }: SearchHistoryProps) {
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
 
     if (diffInHours < 1) {
-      return 'Щойно';
+      return 'Just now';
     } else if (diffInHours < 24) {
-      return `${diffInHours} год тому`;
+      return `${diffInHours}h ago`;
     } else {
       const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays} дн тому`;
+      return `${diffInDays}d ago`;
     }
   };
 
@@ -74,20 +74,20 @@ export default function SearchHistory({ onSelectQuery }: SearchHistoryProps) {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-2">
           <Clock className="w-5 h-5 text-blue-600" />
-          <h3 className="font-bold text-gray-900 text-lg">Історія пошуків</h3>
+          <h3 className="font-bold text-gray-900 text-lg">Search History</h3>
         </div>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="text-blue-600 hover:text-blue-800 transition-colors"
           >
-            {isExpanded ? 'Згорнути' : 'Розгорнути'}
+            {isExpanded ? 'Collapse' : 'Expand'}
           </button>
           {searchHistory.length > 0 && (
             <button
               onClick={clearHistory}
               className="flex items-center space-x-1 text-red-600 hover:text-red-800 transition-colors"
-              title="Очистити історію"
+              title="Clear history"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -111,23 +111,23 @@ export default function SearchHistory({ onSelectQuery }: SearchHistoryProps) {
                 <div className="flex items-center space-x-4 text-gray-500 text-sm">
                   <span>{formatTime(item.timestamp)}</span>
                   <span>•</span>
-                  <span>{item.resultsCount} результатів</span>
+                  <span>{item.resultsCount} results</span>
                 </div>
               </div>
             </button>
-            
+
             <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => onSelectQuery(item.query)}
                 className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
-                title="Повторити пошук"
+                title="Repeat search"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
               <button
                 onClick={() => removeFromHistory(item.id)}
                 className="p-1 text-red-600 hover:text-red-800 transition-colors"
-                title="Видалити з історії"
+                title="Remove from history"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -141,9 +141,9 @@ export default function SearchHistory({ onSelectQuery }: SearchHistoryProps) {
           onClick={() => setIsExpanded(true)}
           className="mt-3 w-full text-blue-600 hover:text-blue-800 text-sm text-center transition-colors"
         >
-          Показати всі ({searchHistory.length})
+          Show all ({searchHistory.length})
         </button>
       )}
     </div>
   );
-} 
+}
